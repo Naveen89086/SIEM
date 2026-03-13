@@ -1,0 +1,2205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SOC COMMAND CENTER | SIEM PRO</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"
+    rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --bg: #030712;
+      --sidebar: #0f172a;
+      --card: rgba(30, 41, 59, 0.4);
+      --card-hover: rgba(30, 41, 59, 0.6);
+      --border: rgba(255, 255, 255, 0.1);
+      --text: #ffffff;
+      --text-dim: #94a3b8;
+      --accent: #06b6d4;
+      --accent-glow: rgba(6, 182, 212, 0.3);
+      --red: #ef4444;
+      --orange: #fbbf24;
+      --green: #10b981;
+      --purple: #8b5cf6;
+      --sidebar-w: 260px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* --- Sidebar Navigation --- */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+      box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 95;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .sidebar-header {
+      padding: 40px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      color: #fff;
+      text-transform: uppercase;
+    }
+
+    .sidebar-brand i {
+      color: var(--accent);
+      filter: drop-shadow(0 0 8px var(--accent));
+    }
+
+    .nav-links {
+      list-style: none;
+      padding: 32px 12px;
+      flex: 1;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 18px;
+      margin-bottom: 8px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-dim);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid transparent;
+    }
+
+    .nav-item i {
+      width: 18px;
+      height: 18px;
+    }
+
+    .nav-item:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--border);
+    }
+
+    .nav-item.active {
+      color: #fff;
+      background: linear-gradient(90deg, rgba(6, 182, 212, 0.15) 0%, transparent 100%);
+      border-left: 4px solid var(--accent);
+      border-top-color: var(--border);
+      border-right-color: var(--border);
+      border-bottom-color: var(--border);
+      padding-left: 14px;
+    }
+
+    .sidebar-footer {
+      padding: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.03);
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    /* --- Main Layout --- */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .topbar {
+      height: 72px;
+      padding: 0 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(3, 7, 18, 0.5);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      z-index: 90;
+    }
+
+    .hamburger {
+      display: none;
+      background: none;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      padding: 8px;
+      margin-left: -8px;
+    }
+
+    .view-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .top-meta {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-dim);
+    }
+
+    .live-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(16, 185, 129, 0.08);
+      color: var(--green);
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .spin i {
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.3;
+      }
+
+      100% {
+        opacity: 1;
+      }
+    }
+
+    .viewport {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    /* --- View Management --- */
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+      animation: slideIn 0.4s cubic-bezier(0, 0, 0.2, 1);
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* --- Grid & Cards --- */
+    .grid-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(12px) saturate(180%);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-8px);
+      background: var(--card-hover);
+      border-color: var(--accent);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .stat-card h4 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-dim);
+      margin-bottom: 16px;
+      font-weight: 700;
+    }
+
+    .stat-value {
+      font-size: 36px;
+      font-weight: 900;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: -1px;
+    }
+
+    .stat-sub {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-top: 10px;
+      font-weight: 600;
+    }
+
+    .card-glow {
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 140px;
+      height: 140px;
+      filter: blur(50px);
+      opacity: 0.1;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .grid-main {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .chart-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 32px;
+    }
+
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .chart-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .chart-title i {
+      color: var(--accent);
+    }
+
+    /* --- Threat Feed & Tables --- */
+    .scroll-list {
+      max-height: 580px;
+      overflow-y: auto;
+      padding-right: 8px;
+    }
+
+    .threat-item {
+      background: rgba(30, 41, 59, 0.4);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 12px;
+      border-left: 4px solid var(--text-dim);
+      transition: all 0.2s;
+    }
+
+    .threat-item:hover {
+      background: rgba(30, 41, 59, 0.6);
+      transform: translateX(4px);
+    }
+
+    .threat-item.CRITICAL {
+      border-left-color: var(--red);
+      box-shadow: 0 0 20px rgba(255, 51, 102, 0.05);
+    }
+
+    .threat-item.HIGH {
+      border-left-color: var(--orange);
+    }
+
+    .threat-item.MEDIUM {
+      border-left-color: #fbbf24;
+    }
+
+    .threat-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      align-items: flex-start;
+    }
+
+    .threat-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+
+    .threat-time {
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    .threat-msg {
+      font-size: 14px;
+      line-height: 1.6;
+      font-weight: 500;
+      color: #e2e8f0;
+    }
+
+    .table-wrap {
+      width: 100%;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      background: var(--card);
+    }
+
+    .pro-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .pro-table th {
+      background: rgba(255, 255, 255, 0.02);
+      padding: 18px 24px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-dim);
+    }
+
+    .pro-table td {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .pro-table tr:hover {
+      background: rgba(255, 255, 255, 0.01);
+    }
+
+    .ip-txt {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+      opacity: 0.9;
+    }
+
+    .tag-proto {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-dim);
+    }
+
+    .tag-proto.tcp {
+      background: rgba(0, 242, 255, 0.1);
+      color: var(--accent);
+    }
+
+    .tag-proto.udp {
+      background: rgba(139, 92, 246, 0.1);
+      color: var(--purple);
+    }
+
+    /* --- System Metrics --- */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .metric-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 28px;
+      text-align: center;
+    }
+
+    .metric-gauge {
+      width: 150px;
+      height: 150px;
+      margin: 0 auto 20px;
+      position: relative;
+    }
+
+    .gauge-svg {
+      transform: rotate(-90deg);
+      width: 100%;
+      height: 100%;
+    }
+
+    .gauge-bg {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.03);
+      stroke-width: 4;
+    }
+
+    .gauge-fg {
+      fill: none;
+      stroke-width: 4;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1s ease;
+    }
+
+    .gauge-label {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .gauge-val {
+      font-size: 28px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .gauge-unit {
+      font-size: 10px;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--text-dim);
+    }
+
+    .speed-box {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .speed-val {
+      background: rgba(255, 255, 255, 0.02);
+      padding: 16px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+    }
+
+    .speed-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+
+    .speed-num {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .disk-box {
+      margin-top: 24px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 16px;
+    }
+
+    .disk-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.6s;
+    }
+
+    /* --- Custom Scrollbar --- */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    .topology-canvas {
+      background: #020617;
+      border-radius: 24px;
+      width: 100%;
+      height: 600px;
+      border: 1px solid var(--border);
+    }
+
+    .mitre-matrix {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 20px;
+      scrollbar-width: thin;
+    }
+
+    .mitre-column {
+      flex: 1;
+      min-width: 200px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .mitre-tactic-header {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      text-align: center;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+
+    .mitre-cell {
+      padding: 12px;
+      background: rgba(30, 41, 59, 0.2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      transition: all 0.2s;
+    }
+
+    .mitre-cell.active {
+      background: rgba(6, 182, 212, 0.1);
+      border-color: var(--accent);
+      box-shadow: 0 0 15px rgba(6, 182, 212, 0.1);
+    }
+
+    /* --- D3 Topology Styles --- */
+    #topoContainer {
+      background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+      border-radius: 24px;
+      width: 100%;
+      height: 650px;
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .topo-svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .topo-node {
+      cursor: pointer;
+      stroke-width: 2px;
+      transition: r 0.3s ease;
+    }
+
+    .topo-node:hover {
+      r: 12;
+    }
+
+    .topo-node.local {
+      stroke: var(--purple);
+      filter: drop-shadow(0 0 10px var(--purple));
+    }
+
+    .topo-node.threat-high {
+      stroke: var(--red);
+      filter: drop-shadow(0 0 12px var(--red));
+    }
+
+    .topo-node.threat-medium {
+      stroke: var(--orange);
+      filter: drop-shadow(0 0 8px var(--orange));
+    }
+
+    .topo-node.threat-low {
+      stroke: var(--accent);
+    }
+
+    .topo-link {
+      fill: none;
+      stroke-opacity: 0.2;
+      transition: stroke-opacity 0.3s;
+    }
+
+    .topo-link.threat-link {
+      stroke: var(--red);
+      stroke-opacity: 0.5;
+    }
+
+    .topo-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      fill: var(--text-dim);
+      pointer-events: none;
+      text-shadow: 0 1px 2px #000;
+    }
+
+    .topo-label.local-label {
+      font-weight: 800;
+      font-size: 12px;
+      fill: var(--text);
+    }
+
+    .flow-particle {
+      fill: var(--accent);
+      filter: blur(1px);
+    }
+
+    /* --- Investigation Drawer --- */
+    .investigation-drawer {
+      position: fixed;
+      right: -450px;
+      top: 0;
+      width: 450px;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.98);
+      border-left: 1px solid var(--border);
+      z-index: 1000;
+      transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      backdrop-filter: blur(20px);
+      box-shadow: -20px 0 50px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .investigation-drawer.open {
+      right: 0;
+    }
+
+    .drawer-header {
+      padding: 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .drawer-content {
+      padding: 24px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .investigation-pair {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      font-size: 12px;
+    }
+
+    .investigation-pair label {
+      color: var(--text-dim);
+      text-transform: uppercase;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .investigation-pair span {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .hex-view {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      line-height: 1.6;
+      color: var(--accent);
+      margin-top: 16px;
+      border: 1px solid var(--border);
+    }
+
+    /* --- Scrollbar Customization --- */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-dim);
+    }
+
+    .hover-row:hover {
+      background: rgba(255, 255, 255, 0.03) !important;
+    }
+
+    .topo-tooltip {
+      position: absolute;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid var(--accent);
+      padding: 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      pointer-events: none;
+      z-index: 1000;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      display: none;
+    }
+
+    /* Fix select dropdown contrast */
+    select option {
+      background: #0f172a !important;
+      color: #fff !important;
+      padding: 12px;
+    }
+
+    select:focus option {
+      background: #1e293b !important;
+    }
+
+    /* --- Responsive Queries --- */
+    @media (max-width: 1024px) {
+      :root {
+        --sidebar-w: 280px;
+      }
+
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        transform: translateX(-100%);
+        z-index: 1000;
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .sidebar.open + .sidebar-overlay {
+        display: block;
+      }
+
+      .hamburger {
+        display: block;
+      }
+
+      .grid-stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .grid-main {
+        grid-template-columns: 1fr;
+      }
+
+      .top-meta {
+        display: none; /* Hide secondary meta on tablet/mobile */
+      }
+    }
+
+    @media (max-width: 768px) {
+      .viewport {
+        padding: 20px;
+      }
+
+      .grid-stats {
+        grid-template-columns: 1fr;
+      }
+
+      .view-title {
+        font-size: 16px;
+      }
+
+      .stat-card {
+        padding: 20px;
+      }
+
+      .stat-value {
+        font-size: 28px;
+      }
+
+      .metrics-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .chart-box {
+        padding: 20px;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+      }
+
+      .pro-table {
+        min-width: 600px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .topbar {
+        padding: 0 16px;
+      }
+
+      .live-status {
+        padding: 6px 12px;
+        font-size: 9px;
+      }
+
+      .sidebar-brand {
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-brand">
+        <i data-lucide="shield-check"></i>
+        <span>SOC COMMAND</span>
+      </div>
+    </div>
+    <nav class="nav-links">
+      <div class="nav-item active" onclick="switchView('overview')"><i data-lucide="layout-dashboard"></i> Dashboard
+      </div>
+      <div class="nav-item" onclick="switchView('threats')"><i data-lucide="zap"></i> Threat Analysis</div>
+      <div class="nav-item" onclick="switchView('logs')"><i data-lucide="database"></i> Security Logs</div>
+      <div class="nav-item" onclick="switchView('traffic')"><i data-lucide="bar-chart-3"></i> Traffic Intel</div>
+      <div class="nav-item" onclick="switchView('monitoring')"><i data-lucide="activity"></i> Network Monitor</div>
+      <div class="nav-item" onclick="switchView('network')"><i data-lucide="globe"></i> Topology Map</div>
+
+      <div class="nav-item" onclick="switchView('mitre')"><i data-lucide="grid"></i> MITRE Framework</div>
+      <div class="nav-item" onclick="switchView('system')"><i data-lucide="cpu"></i> System Analytics</div>
+    </nav>
+    <div class="sidebar-footer">
+      <p>COMMAND CENTER Ver. 2.5</p>
+      <p style="margin-top:4px"><span id="wsStatusDot" style="color:var(--orange)">●</span> <span id="wsStatusTxt">Link
+          established</span></p>
+    </div>
+  </aside>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+  <main class="main">
+    <header class="topbar">
+      <div style="display:flex; align-items:center; gap:20px">
+        <button class="hamburger" onclick="toggleSidebar()">
+          <i data-lucide="menu"></i>
+        </button>
+        <h2 class="view-title" id="view-title">Dashboard Overview</h2>
+        <div class="live-status"><span class="live-dot"></span> <span id="engineStatus">ENGINE ONLINE</span></div>
+      </div>
+
+      <div class="top-meta">
+        <div style="display:flex; flex-direction:column; align-items:flex-end">
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-dim); margin-bottom:2px">Global Threat
+            Level</div>
+          <div style="display:flex; align-items:center; gap:12px">
+            <div style="height:6px; width:120px; background:rgba(255,255,255,0.05); border-radius:3px; overflow:hidden">
+              <div id="threatLevelBar"
+                style="height:100%; width:15%; background:var(--green); transition:width 1s, background 1s"></div>
+            </div>
+            <span id="threatLevelTxt" style="font-weight:800; color:var(--green)">SECURE</span>
+          </div>
+        </div>
+
+        <div style="width:1px; height:32px; background:var(--border)"></div>
+
+        <div style="display:flex; align-items:center; gap:24px">
+          <div style="display:flex; align-items:center; gap:10px">
+            <div style="padding:8px; background:rgba(139, 92, 246, 0.1); border-radius:8px; color:var(--purple)"><i
+                data-lucide="clock" style="width:16px; height:16px"></i></div>
+            <div style="display:flex; flex-direction:column">
+              <span style="font-size:10px; color:var(--text-dim); text-transform:uppercase">Uptime</span>
+              <span id="uptime" style="font-family:'JetBrains Mono'; font-weight:700">00:00:00</span>
+            </div>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:10px">
+            <div style="padding:8px; background:rgba(6, 182, 214, 0.1); border-radius:8px; color:var(--accent)"><i
+                data-lucide="activity" style="width:16px; height:16px"></i></div>
+            <div style="display:flex; flex-direction:column">
+              <span style="font-size:10px; color:var(--text-dim); text-transform:uppercase">Throughput</span>
+              <div style="display:flex; align-items:baseline; gap:4px">
+                <span id="pps" style="font-family:'JetBrains Mono'; font-weight:700">0</span>
+                <span style="font-size:9px; color:var(--text-dim)">PPS</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="viewport">
+      <!-- VIEW OVERVIEW -->
+      <div id="view-overview" class="view active">
+        <div class="grid-stats">
+          <div class="stat-card">
+            <div class="card-glow" style="background:var(--accent)"></div>
+            <div style="display:flex; justify-content:space-between; align-items:flex-start">
+              <h4>Total Ingress</h4>
+              <i data-lucide="arrow-down-right" style="color:var(--green); width:14px"></i>
+            </div>
+            <div class="stat-value" id="totalPackets">0</div>
+            <div style="display:flex; align-items:center; gap:8px; margin-top:8px">
+              <span
+                style="font-size:10px; padding:2px 6px; background:rgba(16, 185, 129, 0.1); color:var(--green); border-radius:4px; font-weight:700">+12%</span>
+              <span class="stat-sub">From last hour</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="card-glow" style="background:var(--red)"></div>
+            <div style="display:flex; justify-content:space-between; align-items:flex-start">
+              <h4>Threat Events</h4>
+              <i data-lucide="shield-alert" style="color:var(--red); width:14px"></i>
+            </div>
+            <div class="stat-value" id="totalAlerts" style="color:var(--red)">0</div>
+            <div style="display:flex; align-items:center; gap:8px; margin-top:8px">
+              <span
+                style="font-size:10px; padding:2px 6px; background:rgba(244, 63, 94, 0.1); color:var(--red); border-radius:4px; font-weight:700">ACTIVE</span>
+              <span class="stat-sub">Recent detections</span>
+            </div>
+          </div>
+          <div class="stat-card" style="grid-column: span 1; overflow: visible;">
+            <div class="card-glow" style="background:var(--orange)"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+              <h4>Network Risk Index</h4>
+              <i data-lucide="shield-alert" style="color:var(--orange); width:14px"></i>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:center; position:relative; height: 120px;">
+              <svg viewBox="0 0 100 100" style="width: 120px; height: 120px; transform: rotate(-90deg);">
+                <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.05)" stroke-width="8" fill="none" />
+                <circle id="riskGauge" cx="50" cy="50" r="40" stroke="var(--orange)" stroke-width="8" fill="none"
+                  stroke-dasharray="251.2" stroke-dashoffset="251.2"
+                  style="transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1), stroke 1s;" />
+              </svg>
+              <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); text-align:center;">
+                <div id="riskValue" style="font-size:28px; font-weight:900; font-family:'JetBrains Mono';">0</div>
+                <div id="riskLabel"
+                  style="font-size:8px; font-weight:800; text-transform:uppercase; color:var(--text-dim);">Normal</div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; margin-top:20px">
+              <span id="riskStatusBadge"
+                style="font-size:10px; padding:2px 6px; background:rgba(245, 158, 11, 0.1); color:var(--orange); border-radius:4px; font-weight:700">GUARDED</span>
+              <span class="stat-sub">Live adaptive score</span>
+            </div>
+          </div>
+          <a href="/investigations" style="text-decoration:none; color:inherit">
+            <div class="stat-card" style="cursor:pointer">
+              <div class="card-glow" style="background:var(--purple)"></div>
+              <div style="display:flex; justify-content:space-between; align-items:flex-start">
+                <h4>Investigations</h4>
+                <i data-lucide="search" style="color:var(--purple); width:14px"></i>
+              </div>
+              <div class="stat-value" id="incidentCount" style="color:var(--purple)">0</div>
+              <div style="display:flex; align-items:center; gap:8px; margin-top:8px">
+                <span
+                  style="font-size:10px; padding:2px 6px; background:rgba(139, 92, 246, 0.1); color:var(--purple); border-radius:4px; font-weight:700">OPEN</span>
+                <span class="stat-sub">Awaiting Triage</span>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <div class="grid-main">
+          <div class="chart-box">
+            <div class="chart-header">
+              <div class="chart-title"><i data-lucide="trending-up"></i> Threat Activity (Pulse)</div>
+            </div>
+            <div style="height: 320px;"><canvas id="timelineChart"></canvas></div>
+            <!-- Investigation Drawer -->
+            <div id="investigationDrawer" class="investigation-drawer">
+              <div class="drawer-header">
+                <div style="display:flex; align-items:center; gap:12px">
+                  <i data-lucide="search" style="color:var(--accent)"></i>
+                  <span style="font-weight:800; letter-spacing:1px; text-transform:uppercase">Investigation Hub</span>
+                </div>
+                <button onclick="closeInvestigation()"
+                  style="background:none; border:none; color:var(--text-dim); cursor:pointer"><i
+                    data-lucide="x"></i></button>
+              </div>
+              <div id="drawerContent" class="drawer-content">
+                <div style="text-align:center; padding:100px 40px; color:var(--text-dim)">
+                  <i data-lucide="eye" style="width:48px; height:48px; margin-bottom:16px; opacity:0.2"></i>
+                  <p>Select a packet or event to begin deep investigation</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="chart-box">
+            <div class="chart-header">
+              <div class="chart-title"><i data-lucide="pie-chart"></i> Severity Mix</div>
+            </div>
+            <div style="height: 320px;"><canvas id="severityChart"></canvas></div>
+          </div>
+        </div>
+
+        <!-- NEW RISK TREND LINE -->
+        <div class="chart-box" style="margin-bottom: 32px;">
+          <div class="chart-header">
+            <div class="chart-title"><i data-lucide="trending-up"></i> Adaptive Risk IQ Trend</div>
+          </div>
+          <div style="height: 200px;"><canvas id="riskTrendChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- VIEW THREATS -->
+      <div id="view-threats" class="view">
+        <div class="grid-main" style="grid-template-columns: 1.2fr 0.8fr;">
+          <div class="chart-box">
+            <div class="chart-header">
+              <div class="chart-title"><i data-lucide="flame"></i> Security Pulse Feed</div>
+            </div>
+            <div class="scroll-list" id="alertFeed"></div>
+          </div>
+          <div class="chart-box">
+            <div class="chart-header">
+              <div class="chart-title"><i data-lucide="bar-chart-3"></i> Tactic Distribution</div>
+            </div>
+            <div style="height: 480px;"><canvas id="alertTypeChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW SECURITY LOGS (REDESIGNED) -->
+      <div id="view-logs" class="view">
+        <div class="chart-box" style="margin-bottom: 24px;">
+          <div class="chart-header" style="flex-direction: column; align-items: flex-start; gap: 20px;">
+            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+              <div class="chart-title"><i data-lucide="database"></i> Security Event Explorer</div>
+              <div class="live-status" style="background: rgba(6, 182, 212, 0.08); color: var(--accent); border-color: var(--accent-glow);">
+                <span id="logCount">0</span> LOGS DISCOVERED
+              </div>
+            </div>
+            
+            <div class="log-toolbar" style="display: flex; gap: 12px; width: 100%; flex-wrap: wrap;">
+              <div style="position: relative; flex: 1; min-width: 300px;">
+                <i data-lucide="search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 16px; color: var(--text-dim);"></i>
+                <input type="text" id="logSearch" placeholder="Search by IP, Type or Description..." 
+                  style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 12px 12px 12px 42px; color: #fff; font-size: 13px; outline: none; transition: border-color 0.3s;"
+                  onkeyup="filterLogs()">
+              </div>
+              
+              <select id="severityFilter" onchange="filterLogs()" 
+                style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 0 16px; color: #fff; font-size: 13px; outline: none; cursor: pointer;">
+                <option value="">All Severities</option>
+                <option value="CRITICAL">Critical Only</option>
+                <option value="HIGH">High Severity</option>
+                <option value="MEDIUM">Medium Severity</option>
+                <option value="LOW">Low Severity</option>
+              </select>
+
+              <select id="typeFilter" onchange="filterLogs()" 
+                style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 0 16px; color: #fff; font-size: 13px; outline: none; cursor: pointer;">
+                <option value="">All Event Types</option>
+              </select>
+
+              <button onclick="fetchLogs(this)" class="nav-item" style="margin-bottom: 0; padding: 10px 18px; background: var(--accent); color: #000; border: none;">
+                <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Refresh
+              </button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="pro-table" id="logTable">
+              <thead>
+                <tr>
+                  <th onclick="sortLogs('timestamp')" style="cursor:pointer">Timestamp <span class="sort-icon-container"><i data-lucide="chevron-down" style="width:12px; display:inline"></i></span></th>
+                  <th>Source</th>
+                  <th>Destination</th>
+                  <th>Proto</th>
+                  <th onclick="sortLogs('event_type')" style="cursor:pointer">Alert Type <span class="sort-icon-container"></span></th>
+                  <th onclick="sortLogs('severity')" style="cursor:pointer">Severity <span class="sort-icon-container"></span></th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody id="logBody">
+                <tr>
+                  <td colspan="7" style="text-align:center; padding: 100px; color: var(--text-dim)">
+                    <i data-lucide="loader" class="spin" style="width: 32px; height: 32px; margin-bottom: 12px; opacity: 0.2"></i>
+                    <p>Fetching security logs from core...</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW MONITORING -->
+      <div id="view-monitoring" class="view">
+        <div class="chart-box" style="margin-bottom: 24px;">
+          <div class="chart-header">
+            <div class="chart-title"><i data-lucide="monitor-dot"></i> Live Packet Telemetry</div>
+          </div>
+          <div class="table-wrap">
+            <table class="pro-table" id="packetTable">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Source</th>
+                  <th>Destination</th>
+                  <th>Protocol</th>
+                  <th>Ports</th>
+                  <th>Len</th>
+                  <th>Security Status</th>
+                </tr>
+              </thead>
+              <tbody id="packetBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW TRAFFIC INTEL -->
+      <div id="view-traffic" class="view">
+        <div class="chart-box">
+          <div class="chart-header">
+            <div class="chart-title"><i data-lucide="table"></i> Detailed Protocol Metrics</div>
+          </div>
+          <div class="table-wrap">
+            <table class="pro-table">
+              <thead>
+                <tr>
+                  <th>Protocol</th>
+                  <th>Packet Count</th>
+                  <th>Avg. Byte Size</th>
+                  <th>Unique Destination Varience</th>
+                </tr>
+              </thead>
+              <tbody id="protocolMetricsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW NETWORK -->
+      <div id="view-network" class="view">
+        <div class="chart-box" style="padding: 0; overflow: hidden; position: relative;">
+          <div class="chart-header"
+            style="position: absolute; top: 20px; left: 20px; z-index: 10; pointer-events: none;">
+            <div class="chart-title"><i data-lucide="share-2"></i> Infrastructure Topology Graph</div>
+          </div>
+          <div id="topoContainer">
+            <div id="topoTooltip" class="topo-tooltip"></div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- VIEW MITRE -->
+      <div id="view-mitre" class="view">
+        <div class="chart-box">
+          <div class="chart-header">
+            <div class="chart-title"><i data-lucide="shield"></i> MITRE ATT&CK Matrix</div>
+          </div>
+          <div class="mitre-matrix" id="mitreGrid"></div>
+        </div>
+      </div>
+
+      <!-- VIEW SYSTEM -->
+      <div id="view-system" class="view">
+        <div class="metrics-grid">
+          <div class="metric-item">
+            <div class="metric-gauge">
+              <svg class="gauge-svg" viewBox="0 0 36 36">
+                <circle class="gauge-bg" cx="18" cy="18" r="16" />
+                <circle class="gauge-fg" id="cpuGauge" cx="18" cy="18" r="16" stroke-dasharray="100 100"
+                  stroke="var(--accent)" />
+              </svg>
+              <div class="gauge-label"><span class="gauge-val" id="cpuVal">0%</span><span class="gauge-unit">CPU</span>
+              </div>
+            </div>
+            <div style="font-size:12px; color:var(--text-dim); font-weight:600">PROCESSOR LOAD</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-gauge">
+              <svg class="gauge-svg" viewBox="0 0 36 36">
+                <circle class="gauge-bg" cx="18" cy="18" r="16" />
+                <circle class="gauge-fg" id="ramGauge" cx="18" cy="18" r="16" stroke-dasharray="100 100"
+                  stroke="var(--purple)" />
+              </svg>
+              <div class="gauge-label"><span class="gauge-val" id="ramVal">0%</span><span class="gauge-unit">RAM</span>
+              </div>
+            </div>
+            <div style="font-size:12px; color:var(--text-dim); font-weight:600" id="ramInfo">0.0 GB Used</div>
+          </div>
+          <div class="metric-item">
+            <div style="font-size:14px; font-weight:700; margin-bottom: 24px;">NETWORK PERFORMANCE</div>
+            <div class="speed-box">
+              <div class="speed-val">
+                <div class="speed-label">DL Speed</div>
+                <div class="speed-num" id="netDownSpeed">0.0</div>
+                <div class="gauge-unit">Mbps</div>
+              </div>
+              <div class="speed-val">
+                <div class="speed-label">UL Speed</div>
+                <div class="speed-num" id="netUpSpeed">0.0</div>
+                <div class="gauge-unit">Mbps</div>
+              </div>
+            </div>
+            <div class="speed-box" style="margin-top:12px">
+              <div class="speed-val" style="grid-column: span 2;">
+                <div class="speed-label">Volume Total</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px">
+                  <div style="color:var(--accent)">IN: <b id="netTotalRecv">0</b> MB</div>
+                  <div style="color:var(--purple)">OUT: <b id="netTotalSent">0</b> MB</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-main" style="grid-template-columns: 1fr 1fr;">
+          <div class="chart-box">
+            <div class="chart-header">
+              <div class="chart-title"><i data-lucide="database"></i> Disk Resources</div>
+            </div>
+            <div class="disk-box">
+              <div class="disk-header"><span>System Capacity</span> <span id="diskPct">0%</span></div>
+              <div class="progress-bar">
+                <div class="progress-fill" id="diskBar" style="width: 0%"></div>
+              </div>
+              <div style="margin-top:16px; font-size:13px; font-weight:500; color:var(--text-dim)" id="diskInfo">0 GB
+                Used of 0 GB</div>
+            </div>
+          </div>
+          <div class="chart-box">
+            <div class="chart-header">
+              <div class="chart-title"><i data-lucide="info"></i> Host Context</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:16px; font-size:14px;">
+              <div style="display:flex; justify-content:space-between"><span
+                  style="color:var(--text-dim)">Environment</span> <span>Production SOC</span></div>
+              <div style="display:flex; justify-content:space-between"><span style="color:var(--text-dim)">Worker
+                  Threads</span> <span id="threadCount" style="color:var(--purple); font-weight:800">0</span></div>
+              <div style="display:flex; justify-content:space-between"><span style="color:var(--text-dim)">Kernel
+                  Status</span> <span style="color:var(--green)">Certified Green</span></div>
+              <div style="display:flex; justify-content:space-between"><span style="color:var(--text-dim)">DB
+                  Connection</span> <span style="color:var(--accent)">SQLite Local</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    lucide.createIcons();
+
+    // --- UI Controls ---
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      sidebar.classList.toggle('open');
+    }
+
+    // --- Navigation ---
+    function switchView(viewId) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(v => v.classList.remove('active'));
+      document.getElementById('view-' + viewId).classList.add('active');
+      event.currentTarget.classList.add('active');
+      document.getElementById('view-title').textContent = event.currentTarget.textContent.trim();
+      
+      // Close sidebar on mobile after selection
+      if (window.innerWidth <= 1024) {
+        document.getElementById('sidebar').classList.remove('open');
+      }
+
+      if (viewId === 'network') setTimeout(drawTopology, 100);
+    }
+
+    // --- Charts Optimization ---
+    Chart.defaults.color = '#94a3b8';
+    Chart.defaults.font.family = "'Inter', sans-serif";
+    Chart.defaults.font.weight = '500';
+
+    const createGradient = (ctx, color) => {
+      const g = ctx.createLinearGradient(0, 0, 0, 400);
+      g.addColorStop(0, color.replace('1)', '0.3)'));
+      g.addColorStop(1, color.replace('1)', '0)'));
+      return g;
+    };
+
+    const timelineChart = new Chart(document.getElementById('timelineChart').getContext('2d'), {
+      type: 'line',
+      data: { labels: [], datasets: [{ label: 'Events', data: [], borderColor: '#00f2ff', borderWidth: 3, tension: 0.4, fill: true, backgroundColor: (ctx) => createGradient(ctx.chart.ctx, 'rgba(0, 242, 255, 1)'), pointRadius: 0 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+        scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.03)' } } }
+      }
+    });
+
+    const severityChart = new Chart(document.getElementById('severityChart'), {
+      type: 'doughnut',
+      data: { labels: ['Critical', 'High', 'Medium', 'Low'], datasets: [{ data: [0, 0, 0, 0], backgroundColor: ['#ff3366', '#ff9933', '#fbbf24', '#00cc99'], borderWidth: 0, hoverOffset: 20 }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '85%', plugins: { legend: { position: 'bottom', labels: { padding: 30, usePointStyle: true, font: { size: 12 } } } } }
+    });
+
+    const alertTypeChart = new Chart(document.getElementById('alertTypeChart'), {
+      type: 'bar',
+      data: {
+        labels: ['Discovery', 'Credential Access', 'Command and Control', 'Exfiltration', 'Impact'],
+        datasets: [{
+          label: 'Tactic Funnel',
+          data: [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0]],
+          backgroundColor: (ctx) => {
+            const colors = [
+              'rgba(6, 182, 212, 0.6)',  // Cyan (Discovery)
+              'rgba(139, 92, 246, 0.6)', // Purple (Access)
+              'rgba(245, 158, 11, 0.6)',  // Orange (C2)
+              'rgba(239, 68, 68, 0.6)',   // Red (Exfil)
+              'rgba(16, 185, 129, 0.6)',  // Green (Impact)
+            ];
+            return colors[ctx.dataIndex] || 'rgba(255, 255, 255, 0.5)';
+          },
+          borderColor: 'rgba(255, 255, 255, 0.1)',
+          borderWidth: 1,
+          borderRadius: 4,
+          barPercentage: 0.85
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            display: false,
+            stacked: false,
+            // Centering logic via fixed range or zero-centered data
+          },
+          y: {
+            grid: { display: false },
+            ticks: {
+              color: '#94a3b8',
+              font: { weight: '800', size: 10 }
+            }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => `Events: ${ctx.raw[1] - ctx.raw[0]}`
+            }
+          }
+        }
+      }
+    });
+
+
+
+    const riskTrendChart = new Chart(document.getElementById('riskTrendChart').getContext('2d'), {
+      type: 'line',
+      data: { labels: [], datasets: [{ label: 'Risk Score', data: [], borderColor: '#f59e0b', borderWidth: 2, tension: 0.3, fill: true, backgroundColor: (ctx) => createGradient(ctx.chart.ctx, 'rgba(245, 158, 11, 0.4)'), pointRadius: 0 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+        scales: { x: { grid: { display: false }, ticks: { display: false } }, y: { beginAtZero: true, max: 100, grid: { color: 'rgba(255,255,255,0.03)' } } }
+      }
+    });
+
+    function updateRiskGauge(val) {
+      const gauge = document.getElementById('riskGauge');
+      const valueText = document.getElementById('riskValue');
+      const label = document.getElementById('riskLabel');
+      const badge = document.getElementById('riskStatusBadge');
+      if (!gauge || !valueText) return;
+      const offset = 251.2 - (val / 100) * 251.2;
+      gauge.style.strokeDashoffset = offset;
+      valueText.textContent = Math.round(val);
+      let color = '#10b981'; // Green
+      let status = 'Normal';
+      let badgeText = 'SECURE';
+      if (val > 80) { color = '#f43f5e'; status = 'Critical'; badgeText = 'IMPACT'; }
+      else if (val > 60) { color = '#f43f5e'; status = 'High'; badgeText = 'THREAT'; }
+      else if (val > 40) { color = '#f59e0b'; status = 'Elevated'; badgeText = 'GUARDED'; }
+      else if (val > 20) { color = '#f59e0b'; status = 'Guarded'; badgeText = 'MONITOR'; }
+      gauge.style.stroke = color;
+      valueText.style.color = color;
+      label.textContent = status;
+      badge.textContent = badgeText;
+      badge.style.color = color;
+      badge.style.background = color + '22';
+    }
+
+    // --- Local Uptime Ticker (independent of WebSocket) ---
+    let localUptimeStart = Date.now();
+    let serverUptimeOffset = 0; // synced from server when WS arrives
+    let uptimeSynced = false;
+
+    function tickUptime() {
+      let totalSeconds;
+      if (uptimeSynced) {
+        totalSeconds = serverUptimeOffset + Math.floor((Date.now() - localUptimeStart) / 1000);
+      } else {
+        totalSeconds = Math.floor((Date.now() - localUptimeStart) / 1000);
+      }
+      const h = Math.floor(totalSeconds / 3600);
+      const m = Math.floor((totalSeconds % 3600) / 60);
+      const s = totalSeconds % 60;
+      const el = document.getElementById('uptime');
+      if (el) el.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+    setInterval(tickUptime, 1000);
+    tickUptime();
+
+    // --- WebSocket & Logic ---
+    let ws;
+    function connect() {
+      ws = new WebSocket(`ws://${location.host}/ws`);
+      ws.onopen = () => { document.getElementById('wsStatusDot').style.color = '#00cc99'; document.getElementById('wsStatusTxt').textContent = 'Link established'; };
+      ws.onmessage = (e) => { const d = JSON.parse(e.data); if (d.type === 'update') handleUpdate(d); };
+      ws.onclose = () => { document.getElementById('wsStatusDot').style.color = '#ff3366'; document.getElementById('wsStatusTxt').textContent = 'Link failure'; setTimeout(connect, 3000); };
+    }
+    connect();
+
+    function handleUpdate(d) {
+      const s = d.stats || {};
+
+      // --- Safe stat updates ---
+      const totalPkts = s.total_packets ?? 0;
+      document.getElementById('totalPackets').textContent = totalPkts.toLocaleString();
+      const totalAlertsElement = document.getElementById('totalAlerts');
+      const totalAlerts = s.total_alerts ?? 0;
+      totalAlertsElement.textContent = totalAlerts.toLocaleString();
+
+      // --- FIX: Global Threat Level — 4-tier severity model ---
+      const bySev = s.by_severity || {};
+      const nCritical = bySev.CRITICAL || 0;
+      const nHigh = bySev.HIGH || 0;
+      const nMedium = bySev.MEDIUM || 0;
+      const nLow = bySev.LOW || 0;
+      const threatLevelBar = document.getElementById('threatLevelBar');
+      const threatLevelTxt = document.getElementById('threatLevelTxt');
+      if (threatLevelBar && threatLevelTxt) {
+        if (nCritical > 0 || nHigh > 0) {
+          const barPct = Math.min(100, 60 + ((nCritical + nHigh) / 10) * 40);
+          threatLevelBar.style.width = barPct + '%';
+          threatLevelBar.style.background = 'var(--red)';
+          threatLevelTxt.textContent = 'CRITICAL';
+          threatLevelTxt.style.color = 'var(--red)';
+        } else if (nMedium > 0) {
+          const barPct = Math.min(59, 30 + (nMedium / 10) * 29);
+          threatLevelBar.style.width = barPct + '%';
+          threatLevelBar.style.background = 'var(--orange)';
+          threatLevelTxt.textContent = 'ELEVATED';
+          threatLevelTxt.style.color = 'var(--orange)';
+        } else if (nLow > 0) {
+          const barPct = Math.min(29, 10 + (nLow / 20) * 19);
+          threatLevelBar.style.width = barPct + '%';
+          threatLevelBar.style.background = 'var(--orange)';
+          threatLevelTxt.textContent = 'GUARDED';
+          threatLevelTxt.style.color = 'var(--orange)';
+        } else {
+          threatLevelBar.style.width = '8%';
+          threatLevelBar.style.background = 'var(--green)';
+          threatLevelTxt.textContent = 'SECURE';
+          threatLevelTxt.style.color = 'var(--green)';
+        }
+      }
+
+      document.getElementById('pps').textContent = s.packets_per_second ?? 0;
+
+      const critEl = document.getElementById('criticalCount');
+      if (critEl) critEl.textContent = nCritical;
+
+      const byTactic = s.by_tactic || {};
+      const tacticOrder = ['Discovery', 'Credential Access', 'Command and Control', 'Exfiltration', 'Impact'];
+      alertTypeChart.data.datasets[0].data = tacticOrder.map(t => {
+        const val = byTactic[t] || 0;
+        return [-val / 2, val / 2];
+      });
+      alertTypeChart.update('none');
+
+
+
+      // --- FIX: System Analytics — null-safe all sys.* fields ---
+      const sys = d.system || {};
+      updateGauge('cpu', sys.cpu_percent ?? 0);
+      updateGauge('ram', sys.ram_percent ?? 0);
+      const ramUsed = sys.ram_used_gb ?? 0;
+      const ramTotal = sys.ram_total_gb ?? 0;
+      document.getElementById('ramInfo').textContent = `${ramUsed} / ${ramTotal} GB`;
+
+      const recvMbps = sys.net_recv_mbps ?? 0;
+      const sentMbps = sys.net_sent_mbps ?? 0;
+      document.getElementById('netDownSpeed').textContent = recvMbps.toFixed(1);
+      document.getElementById('netUpSpeed').textContent = sentMbps.toFixed(1);
+      document.getElementById('netTotalRecv').textContent = Math.round(sys.net_total_recv_mb ?? 0);
+      document.getElementById('netTotalSent').textContent = Math.round(sys.net_total_sent_mb ?? 0);
+
+      const diskPct = sys.disk_percent ?? 0;
+      const diskUsed = sys.disk_used_gb ?? 0;
+      const diskTotal = sys.disk_total_gb ?? 0;
+      document.getElementById('diskPct').textContent = diskPct + '%';
+      document.getElementById('diskBar').style.width = diskPct + '%';
+      document.getElementById('diskInfo').textContent = `${diskUsed} GB Used of ${diskTotal} GB`;
+      document.getElementById('diskBar').style.background = diskPct > 85 ? 'var(--red)' : 'var(--accent)';
+
+      const threadEl = document.getElementById('threadCount');
+      if (threadEl && sys.thread_count !== undefined) threadEl.textContent = sys.thread_count;
+
+      // --- FIX: Sync local uptime ticker with authoritative server value ---
+      if (sys.uptime_seconds !== undefined) {
+        serverUptimeOffset = sys.uptime_seconds;
+        localUptimeStart = Date.now();
+        uptimeSynced = true;
+      }
+
+      if (d.alerts) renderAlerts(d.alerts);
+      if (d.packets) renderPackets(d.packets);
+
+      if (d.network_risk !== undefined) updateRiskGauge(d.network_risk);
+      if (d.risk_trend) {
+        riskTrendChart.data.labels = d.risk_trend.map(r => '');
+        riskTrendChart.data.datasets[0].data = d.risk_trend.map(r => r.score);
+        riskTrendChart.update('none');
+      }
+    }
+
+    function renderAlerts(alerts) {
+      const feed = document.getElementById('alertFeed');
+      feed.innerHTML = alerts.map(a => {
+        const color = a.severity === 'critical' ? 'var(--red)' : a.severity === 'high' ? 'var(--red)' : a.severity === 'medium' ? 'var(--orange)' : 'var(--green)';
+        return `
+          <div class="threat-item ${a.severity}" style="border-left: 4px solid ${color}; background: rgba(255,255,255,0.02); margin-bottom: 12px; padding: 16px; border-radius: 12px; transition: all 0.2s">
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px">
+              <span style="font-size:10px; font-weight:800; color:${color}; text-transform:uppercase; letter-spacing:1px">${a.severity}</span>
+              <span style="font-size:10px; color:var(--text-dim)">${new Date(a.timestamp * 1000).toLocaleTimeString()}</span>
+            </div>
+            <div style="font-weight:700; margin-bottom:4px; color:#fff">${a.description}</div>
+            <div style="font-size:11px; color:var(--text-dim); display:flex; gap:12px">
+               <span><i data-lucide="target" style="width:12px; vertical-align:middle; margin-right:4px"></i>${a.src_ip}</span>
+               <span>→</span>
+               <span>${a.dst_ip}</span>
+            </div>
+            ${a.mitre_id ? `<div style="margin-top:8px; font-size:10px; color:var(--purple); font-weight:700">[${a.mitre_id}] ${a.mitre_technique}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function renderPackets(packets) {
+      window.lastPackets = packets; // Store for investigation lookup
+      const tbody = document.getElementById('packetBody');
+      if (!tbody) return;
+
+      tbody.innerHTML = packets.map(p => {
+        const portStr = (p.src_port || p.dst_port) ? `${p.src_port || '?'}:${p.dst_port || '?'}` : '---';
+        return `
+          <tr onclick="investigatePacket(${p.id})" style="cursor:pointer" class="hover-row">
+            <td style="font-family:'JetBrains Mono'; font-size:11px; color:var(--text-dim)">${p.timestamp_str || new Date(p.timestamp * 1000).toLocaleTimeString()}</td>
+            <td style="font-family:'JetBrains Mono'; font-weight:700; color:var(--accent)">${p.src_ip}</td>
+            <td style="font-family:'JetBrains Mono'; font-weight:700; color:var(--purple)">${p.dst_ip}</td>
+            <td><span style="padding:2px 6px; background:rgba(255,255,255,0.05); border-radius:4px; font-size:10px; font-weight:700">${p.protocol}</span></td>
+            <td style="font-family:'JetBrains Mono'; color:var(--text-dim)">${portStr}</td>
+            <td style="font-family:'JetBrains Mono'">${p.length}</td>
+            <td>
+              ${p.is_threat ?
+            `<span style="padding:4px 8px; border-radius:6px; font-size:10px; font-weight:800; background:var(--red)22; color:var(--red); border:1px solid var(--red)44">THREAT</span>` :
+            `<span style="padding:4px 8px; border-radius:6px; font-size:10px; font-weight:800; background:var(--green)22; color:var(--green); border:1px solid var(--green)44">CLEAN</span>`
+          }
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function investigatePacket(id) {
+      const p = window.lastPackets.find(x => x.id === id);
+      if (!p) return;
+
+      const drawer = document.getElementById('investigationDrawer');
+      const content = document.getElementById('drawerContent');
+
+      drawer.classList.add('open');
+
+      // Generate dummy hex for coolness
+      let hex = "";
+      for (let i = 0; i < 8; i++) {
+        hex += (Math.random().toString(16).substr(2, 32).toUpperCase() + "<br>");
+      }
+
+      content.innerHTML = `
+          <div style="margin-bottom:24px">
+            <h3 style="margin-bottom:8px; color:#fff">Packet Analysis [ID: ${id}]</h3>
+            <span style="padding:4px 8px; border-radius:4px; background:${p.is_threat ? 'var(--red)' : 'var(--green)'}22; color:${p.is_threat ? 'var(--red)' : 'var(--green)'}; font-size:10px; font-weight:800">${p.is_threat ? 'THREAT DETECTED' : 'CLEAR FLOW'}</span>
+          </div>
+
+          <div class="investigation-pair"><label>Source IP</label><span>${p.src_ip}</span></div>
+          <div class="investigation-pair"><label>Dest IP</label><span>${p.dst_ip}</span></div>
+          <div class="investigation-pair"><label>Protocol</label><span>${p.protocol}</span></div>
+          <div class="investigation-pair"><label>Length</label><span>${p.length} Bytes</span></div>
+          
+          <div style="margin-top:32px">
+            <h4 style="font-size:11px; text-transform:uppercase; color:var(--text-dim); margin-bottom:12px">Raw Payload Hex</h4>
+            <div class="hex-view">${hex}</div>
+          </div>
+
+          <div style="margin-top:32px; display:flex; gap:12px">
+             <button class="btn-primary" style="flex:1; padding:12px; font-size:11px" onclick="alert('Incident logged for further review')">CREATE INCIDENT</button>
+             <button class="btn-secondary" style="flex:1; padding:12px; font-size:11px" onclick="closeInvestigation()">ACKNOWLEDGE</button>
+          </div>
+       `;
+      lucide.createIcons();
+    }
+
+    function closeInvestigation() {
+      document.getElementById('investigationDrawer').classList.remove('open');
+    }
+
+    function updateGauge(name, val) {
+      const el = document.getElementById(name + 'Gauge');
+      const text = document.getElementById(name + 'Val');
+      if (!el) return;
+      el.style.strokeDashoffset = 100 - val;
+      text.textContent = Math.round(val) + '%';
+      el.style.stroke = val > 80 ? 'var(--red)' : (val > 60 ? 'var(--orange)' : (name === 'cpu' ? 'var(--accent)' : 'var(--purple)'));
+    }
+
+    // --- FIX: Severity Mix chart — independent poll of /api/severity ---
+    async function loadSeverityChart() {
+      try {
+        const data = await (await fetch('/api/severity')).json();
+        const c = data.CRITICAL || 0;
+        const h = data.HIGH || 0;
+        const m = data.MEDIUM || 0;
+        const l = data.LOW || 0;
+        const total = c + h + m + l;
+        if (total === 0) {
+          // Show placeholder so chart isn't blank
+          severityChart.data.datasets[0].data = [1, 1, 1, 1];
+          severityChart.data.datasets[0].backgroundColor = ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.05)', 'rgba(255,255,255,0.05)', 'rgba(255,255,255,0.05)'];
+          if (!severityChart.options.plugins.title) {
+            severityChart.options.plugins.title = { display: true, text: 'No Data Yet', color: '#94a3b8', font: { size: 13 } };
+          }
+        } else {
+          severityChart.data.datasets[0].data = [c, h, m, l];
+          severityChart.data.datasets[0].backgroundColor = ['#ff3366', '#ff9933', '#fbbf24', '#00cc99'];
+          if (severityChart.options.plugins.title) {
+            severityChart.options.plugins.title.display = false;
+          }
+        }
+        severityChart.update('none');
+      } catch (e) { console.warn('[SeverityChart] fetch failed:', e); }
+    }
+    loadSeverityChart();
+    setInterval(loadSeverityChart, 10000);
+
+    async function loadExtras() {
+      try {
+        const inc = await (await fetch('/api/incidents')).json();
+        document.getElementById('incidentCount').textContent = inc.filter(i => i.status === 'OPEN').length;
+
+        const protocols = await (await fetch('/api/protocols')).json();
+        const pLabels = protocols.map(p => p.protocol);
+        const pCounts = protocols.map(p => p.cnt);
+        const pTargets = protocols.map(p => p.unique_dsts);
+
+        const metricsBody = document.getElementById('protocolMetricsBody');
+        if (metricsBody) {
+          metricsBody.innerHTML = protocols.map(p => `
+            <tr>
+              <td style="font-weight:700; color:var(--accent)">${p.protocol}</td>
+              <td style="font-family:'JetBrains Mono'">${p.cnt.toLocaleString()}</td>
+              <td style="font-family:'JetBrains Mono'">${Math.round(p.avg_len)} B</td>
+              <td>
+                <div style="display:flex; align-items:center; gap:12px">
+                  <div style="flex:1; height:4px; background:rgba(255,255,255,0.05); border-radius:2px; overflow:hidden">
+                    <div style="width:${Math.min((p.unique_dsts / 50) * 100, 100)}%; height:100%; background:var(--purple)"></div>
+                  </div>
+                  <span style="font-size:10px; font-weight:700; color:var(--text-dim)">${p.unique_dsts} Targets</span>
+                </div>
+              </td>
+            </tr>
+          `).join('');
+        }
+
+        const mitre = await (await fetch('/api/mitre')).json();
+        const mitreGrid = document.getElementById('mitreGrid');
+
+        // Group by tactic
+        const grouped = {};
+        Object.entries(mitre.definitions).forEach(([k, v]) => {
+          if (!grouped[v.tactic]) grouped[v.tactic] = [];
+          const found = (mitre.coverage || []).find(c => c.mitre_id === v.id);
+          grouped[v.tactic].push({ ...v, count: found ? found.cnt : 0 });
+        });
+
+        // Tactic priority order for better matrix flow
+        const order = ['Reconnaissance', 'Resource Development', 'Initial Access', 'Execution', 'Persistence', 'Privilege Escalation', 'Defense Evasion', 'Credential Access', 'Discovery', 'Lateral Movement', 'Collection', 'Command and Control', 'Exfiltration', 'Impact'];
+        const sortedTactics = Object.keys(grouped).sort((a, b) => order.indexOf(a) - order.indexOf(b));
+
+        mitreGrid.innerHTML = sortedTactics.map(tactic => `
+          <div class="mitre-column">
+            <div class="mitre-tactic-header">${tactic}</div>
+            ${grouped[tactic].map(tech => `
+              <div class="mitre-cell ${tech.count > 0 ? 'active' : ''}">
+                <div style="font-size:9px; color:var(--purple); font-weight:800; margin-bottom:4px">${tech.id}</div>
+                <div style="font-size:12px; font-weight:600; line-height:1.3; color:#e2e8f0">${tech.name}</div>
+                <div style="font-size:9px; color:var(--text-dim); margin-top:8px">
+                    ${tech.count > 0 ? `<b>${tech.count}</b> Event Detections` : 'Standby Coverage'}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `).join('');
+
+        const timeline = await (await fetch('/api/events/timeline?hours=1&unit=minute')).json();
+        // Generate full 60 minute timeline labels
+        const labels = Array.from({ length: 60 }, (_, i) => i + 'm');
+        timelineChart.data.labels = labels;
+        timelineChart.data.datasets[0].data = labels.map((_, i) => {
+          const bucketData = timeline.filter(t => t.bucket === i);
+          return bucketData.reduce((sum, item) => sum + item.cnt, 0);
+        });
+        timelineChart.update('none');
+      } catch (e) { }
+    }
+
+    let topoSimulation;
+    async function drawTopology() {
+      try {
+        const resp = await fetch('/api/topology');
+        const data = await resp.json();
+        const container = d3.select('#topoContainer');
+        const W = container.node().offsetWidth;
+        const H = container.node().offsetHeight;
+
+        container.selectAll('svg').remove();
+        const svg = container.append('svg')
+          .attr('class', 'topo-svg')
+          .attr('viewBox', [0, 0, W, H]);
+
+        const g = svg.append('g');
+
+        // Zoom functionality
+        svg.call(d3.zoom().scaleExtent([0.1, 4]).on('zoom', (e) => g.attr('transform', e.transform)));
+
+        if (!data.links || data.links.length === 0) {
+          g.append('text').attr('x', W / 2).attr('y', H / 2).attr('text-anchor', 'middle').attr('fill', '#94a3b8').text('No active connections detected...');
+          return;
+        }
+
+        // Prepare data
+        const nodes = Object.values(data.threat_map).map(t => ({
+          id: t.ip,
+          level: t.level,
+          isLocal: t.ip === data.local_ip,
+          attack_types: t.attack_types || []
+        }));
+
+        const links = data.links.map(l => ({
+          source: l.src_ip,
+          target: l.dst_ip,
+          weight: l.weight,
+          isThreat: l.threat_count > 0
+        }));
+
+        // Simulation
+        if (topoSimulation) topoSimulation.stop();
+        topoSimulation = d3.forceSimulation(nodes)
+          .force('link', d3.forceLink(links).id(d => d.id).distance(200))
+          .force('charge', d3.forceManyBody().strength(-400))
+          .force('center', d3.forceCenter(W / 2, H / 2))
+          .force('collision', d3.forceCollide().radius(50));
+
+        // Links
+        const link = g.append('g')
+          .selectAll('line')
+          .data(links)
+          .join('line')
+          .attr('class', d => `topo-link ${d.isThreat ? 'threat-link' : ''}`)
+          .attr('stroke', d => d.isThreat ? '#ff3366' : '#00f2ff')
+          .attr('stroke-width', d => Math.min(d.weight / 5 + 1, 5));
+
+        // Flow Particles
+        const particles = g.append('g');
+        function animateFlow() {
+          particles.selectAll('.flow-particle')
+            .data(links.filter(l => l.weight > 2)) // Only show flow for active links
+            .join('circle')
+            .attr('class', 'flow-particle')
+            .attr('r', 1.5)
+            .each(function (d) {
+              const particle = d3.select(this);
+              function repeat() {
+                particle
+                  .attr('cx', d.source.x)
+                  .attr('cy', d.source.y)
+                  .transition()
+                  .duration(2000 / (1 + d.weight / 50))
+                  .ease(d3.easeLinear)
+                  .attr('cx', d.target.x)
+                  .attr('cy', d.target.y)
+                  .on('end', repeat);
+              }
+              repeat();
+            });
+        }
+
+        // Nodes
+        const node = g.append('g')
+          .selectAll('.node-group')
+          .data(nodes)
+          .join('g')
+          .attr('class', 'node-group')
+          .call(d3.drag()
+            .on('start', dragstarted)
+            .on('drag', dragged)
+            .on('end', dragended));
+
+        node.append('circle')
+          .attr('class', d => `topo-node ${d.isLocal ? 'local' : ''} threat-${d.level}`)
+          .attr('r', d => d.isLocal ? 14 : 9)
+          .attr('fill', d => d.isLocal ? '#8b5cf6' : '#0f172a');
+
+        node.append('text')
+          .attr('class', d => `topo-label ${d.isLocal ? 'local-label' : ''}`)
+          .attr('dy', d => d.isLocal ? -24 : -18)
+          .attr('text-anchor', 'middle')
+          .text(d => d.isLocal ? 'COMMAND_HUB' : d.id);
+
+        // Tooltip
+        const tooltip = d3.select('#topoTooltip');
+        node.on('mouseover', (e, d) => {
+          tooltip.style('display', 'block')
+            .html(`
+              <div style="color:var(--accent); font-weight:800; margin-bottom:4px">${d.id}</div>
+              <div style="font-size:10px; opacity:0.8; margin-bottom:8px">${d.isLocal ? 'Local Endpoint' : 'Remote Host'}</div>
+              <div style="display:flex; justify-content:space-between; gap:20px">
+                <span style="color:var(--text-dim)">Risk Level:</span>
+                 <b style="color:${d.level === 'critical' || d.level === 'high' ? 'var(--red)' : d.level === 'medium' ? 'var(--orange)' : 'var(--green)'}">${d.level.toUpperCase()}</b>
+              </div>
+              ${d.attack_types.length ? `<div style="margin-top:8px; font-size:10px; color:var(--red)">${d.attack_types.join(', ')}</div>` : ''}
+            `);
+        })
+          .on('mousemove', (e) => {
+            tooltip.style('left', (e.offsetX + 15) + 'px').style('top', (e.offsetY - 15) + 'px');
+          })
+          .on('mouseleave', () => tooltip.style('display', 'none'));
+
+        topoSimulation.on('tick', () => {
+          link
+            .attr('x1', d => d.source.x)
+            .attr('y1', d => d.source.y)
+            .attr('x2', d => d.target.x)
+            .attr('y2', d => d.target.y);
+
+          node.attr('transform', d => `translate(${d.x},${d.y})`);
+
+          // Animate particles once after first layout stable
+          if (topoSimulation.alpha() < 0.1 && !particles.node().childElementCount) {
+            animateFlow();
+          }
+        });
+
+        function dragstarted(event) {
+          if (!event.active) topoSimulation.alphaTarget(0.3).restart();
+          event.subject.fx = event.subject.x;
+          event.subject.fy = event.subject.y;
+        }
+
+        function dragged(event) {
+          event.subject.fx = event.x;
+          event.subject.fy = event.y;
+        }
+
+        function dragended(event) {
+          if (!event.active) topoSimulation.alphaTarget(0);
+          event.subject.fx = null;
+          event.subject.fy = null;
+        }
+
+      } catch (e) { console.error("D3 Topology Error:", e); }
+    }
+
+    setInterval(loadExtras, 10000);
+    loadExtras();
+
+    // --- System Analytics fallback poll (ensures page works even without WS) ---
+    async function pollSystemMetrics() {
+      try {
+        const sys = await (await fetch('/api/system')).json();
+        updateGauge('cpu', sys.cpu_percent ?? 0);
+        updateGauge('ram', sys.ram_percent ?? 0);
+        document.getElementById('ramInfo').textContent = `${sys.ram_used_gb ?? 0} / ${sys.ram_total_gb ?? 0} GB`;
+        document.getElementById('netDownSpeed').textContent = (sys.net_recv_mbps ?? 0).toFixed(1);
+        document.getElementById('netUpSpeed').textContent = (sys.net_sent_mbps ?? 0).toFixed(1);
+        document.getElementById('netTotalRecv').textContent = Math.round(sys.net_total_recv_mb ?? 0);
+        document.getElementById('netTotalSent').textContent = Math.round(sys.net_total_sent_mb ?? 0);
+        const diskPct = sys.disk_percent ?? 0;
+        document.getElementById('diskPct').textContent = diskPct + '%';
+        document.getElementById('diskBar').style.width = diskPct + '%';
+        document.getElementById('diskInfo').textContent = `${sys.disk_used_gb ?? 0} GB Used of ${sys.disk_total_gb ?? 0} GB`;
+        document.getElementById('diskBar').style.background = diskPct > 85 ? 'var(--red)' : 'var(--accent)';
+        const threadEl = document.getElementById('threadCount');
+        if (threadEl) threadEl.textContent = sys.thread_count ?? 0;
+        if (sys.uptime_seconds !== undefined && !uptimeSynced) {
+          serverUptimeOffset = sys.uptime_seconds;
+          localUptimeStart = Date.now();
+          uptimeSynced = true;
+        }
+      } catch (e) { console.warn('[SystemMetrics] poll failed:', e); }
+    }
+    pollSystemMetrics();
+    setInterval(pollSystemMetrics, 5000);
+
+    // --- Security Logs Redesign Logic ---
+    let allLogs = [];
+    let logSortConfig = { key: 'timestamp', direction: 'desc' };
+    async function fetchLogs(btn) {
+      if (btn) btn.classList.add('spin');
+      
+      try {
+        // Use the dedicated security logs API for full structured data
+        const resp = await fetch('/api/events?limit=500'); 
+        allLogs = await resp.json();
+        
+        // Update type filter dropdown
+        const types = [...new Set(allLogs.map(l => l.alert_type || ''))].filter(t => t).sort();
+        const typeFilter = document.getElementById('typeFilter');
+        const currentVal = typeFilter.value;
+        typeFilter.innerHTML = '<option value="">All Event Types</option>' + 
+          types.map(t => `<option value="${t}" ${t === currentVal ? 'selected' : ''}>${t}</option>`).join('');
+        
+        filterLogs();
+      } catch (e) {
+        console.error("Fetch Logs Error:", e);
+        document.getElementById('logBody').innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--red); padding:40px">Failed to load logs. Is the server running?</td></tr>`;
+      } finally {
+        if (btn) setTimeout(() => btn.classList.remove('spin'), 600);
+      }
+    }
+
+    function filterLogs() {
+      const search = document.getElementById('logSearch').value.toLowerCase();
+      const severity = document.getElementById('severityFilter').value;
+      const type = document.getElementById('typeFilter').value;
+
+      let filtered = allLogs.filter(l => {
+        const matchesSearch = !search || 
+          (l.src_ip || '').toLowerCase().includes(search) || 
+          (l.dst_ip || '').toLowerCase().includes(search) || 
+          (l.description || '').toLowerCase().includes(search) ||
+          (l.alert_type || '').toLowerCase().includes(search);
+        const matchesSeverity = !severity || l.severity === severity;
+        const matchesType = !type || l.alert_type === type;
+        return matchesSearch && matchesSeverity && matchesType;
+      });
+
+      renderLogs(filtered);
+    }
+
+    function sortLogs(key) {
+      // Map sort keys correctly for UI
+      let sortKey = key;
+      if (key === 'alert_type') sortKey = 'alert_type';
+
+      if (logSortConfig.key === sortKey) {
+        logSortConfig.direction = logSortConfig.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        logSortConfig.key = sortKey;
+        logSortConfig.direction = 'desc';
+      }
+      
+      // Update UI headers
+      document.querySelectorAll('#logTable .sort-icon-container').forEach(container => {
+        container.innerHTML = '';
+      });
+      
+      const ths = document.querySelectorAll('#logTable th');
+      // Indices: 0=Timestamp, 4=Alert Type, 5=Severity
+      const targetIdx = sortKey === 'timestamp' ? 0 : (sortKey === 'alert_type' ? 4 : (sortKey === 'severity' ? 5 : -1));
+      if (targetIdx !== -1) {
+        const icon = logSortConfig.direction === 'asc' ? 'chevron-up' : 'chevron-down';
+        const container = ths[targetIdx].querySelector('.sort-icon-container');
+        if (container) {
+          container.innerHTML = `<i data-lucide="${icon}" style="width:12px; display:inline"></i>`;
+        }
+        lucide.createIcons();
+      }
+
+      filterLogs();
+    }
+
+    function renderLogs(logs) {
+      // Sort the logs
+      logs.sort((a, b) => {
+        let valA = a[logSortConfig.key] || '';
+        let valB = b[logSortConfig.key] || '';
+        
+        if (logSortConfig.key === 'timestamp') {
+          valA = parseFloat(valA);
+          valB = parseFloat(valB);
+        }
+
+        if (valA < valB) return logSortConfig.direction === 'asc' ? -1 : 1;
+        if (valA > valB) return logSortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+
+      const body = document.getElementById('logBody');
+      const logCountEl = document.getElementById('logCount');
+      if (logCountEl) logCountEl.textContent = logs.length.toLocaleString();
+
+      if (logs.length === 0) {
+        body.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 100px; color: var(--text-dim)">No logs found matching your criteria.</td></tr>`;
+        return;
+      }
+
+      body.innerHTML = logs.map(l => {
+        const sevColor = l.severity === 'CRITICAL' ? 'var(--red)' : l.severity === 'HIGH' ? 'var(--red)' : l.severity === 'MEDIUM' ? 'var(--orange)' : 'var(--green)';
+        const protoClass = l.protocol?.toLowerCase() || 'other';
+        
+        // Format timestamp safely
+        const d = new Date(l.timestamp * 1000);
+        const tsFormatted = d.getFullYear() + '-' + 
+                           String(d.getMonth()+1).padStart(2, '0') + '-' + 
+                           String(d.getDate()).padStart(2, '0') + ' ' + 
+                           String(d.getHours()).padStart(2, '0') + ':' + 
+                           String(d.getMinutes()).padStart(2, '0') + ':' + 
+                           String(d.getSeconds()).padStart(2, '0');
+        
+        return `
+          <tr class="hover-row">
+            <td style="font-family:'JetBrains Mono'; color:var(--text-dim)">${tsFormatted}</td>
+            <td class="ip-txt" style="color:var(--accent)">${l.src_ip || '---'}</td>
+            <td class="ip-txt" style="color:var(--purple)">${l.dst_ip || '---'}</td>
+            <td><span class="tag-proto ${protoClass}">${l.protocol || '---'}</span></td>
+            <td><b style="font-size:11px">${l.alert_type}</b></td>
+            <td>
+              <span style="padding:4px 8px; border-radius:6px; font-size:10px; font-weight:800; background:${sevColor}22; color:${sevColor}; border:1px solid ${sevColor}44">
+                ${l.severity}
+              </span>
+            </td>
+            <td style="max-width:300px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis" title="${l.description}">
+              ${l.description}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Initialize fetch when log view is switched
+    const originalSwitchView = window.switchView;
+    window.switchView = function(viewId) {
+      originalSwitchView(viewId);
+      if (viewId === 'logs') {
+        fetchLogs();
+      }
+    };
+
+  </script>
+</body>
+
+</html>

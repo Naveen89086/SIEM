@@ -6,11 +6,12 @@ import time
 import statistics
 from collections import defaultdict
 from config import (
-    THRESHOLD, TIME_WINDOW, BLOCKED_PORTS, SCAN_THRESHOLD,
+    THRESHOLD, TIME_WINDOW, BLOCKED_PORTS, SCAN_THRESHOLD, SCAN_WINDOW,
     SYN_THRESHOLD, SYN_FLOOD_WINDOW, BRUTE_FORCE_THRESHOLD,
-    BRUTE_FORCE_WINDOW, DNS_TUNNEL_SIZE, DNS_TUNNEL_RATE,
+    BRUTE_FORCE_WINDOW, DNS_TUNNEL_SIZE, DNS_TUNNEL_RATE, DNS_TUNNEL_WINDOW,
     EXFIL_SIZE_THRESHOLD, EXFIL_WINDOW, BEACON_TOLERANCE,
-    BEACON_MIN_COUNT, AUTH_PORTS, MITRE_MAP
+    BEACON_MIN_COUNT, BEACON_INTERVAL_MIN, BEACON_WINDOW, 
+    RANSOMWARE_FILE_MODS, RANSOMWARE_WINDOW, AUTH_PORTS, MITRE_MAP
 )
 from logger import log_event
 from threat_intel import check_ip_reputation
@@ -64,7 +65,7 @@ class BehavioralTracker:
 
 class RansomwareTracker:
     def __init__(self):
-        self.file_mods = BehavioralTracker(window_seconds=60)
+        self.file_mods = BehavioralTracker(window_seconds=RANSOMWARE_WINDOW)
         self.outbound_conns = BehavioralTracker(window_seconds=60)
         self.processes = BehavioralTracker(window_seconds=300)
     
@@ -100,7 +101,6 @@ stats = {
     "total_packets": 0,
     "total_alerts": 0,
     "by_type": defaultdict(int),
-    "by_tactic": defaultdict(int),
     "by_protocol": defaultdict(int),
     "by_severity": defaultdict(int),
     "packets_per_second": 0,
@@ -116,16 +116,21 @@ def get_network_risk():
 
 def update_network_risk(event_risk):
     """Update global risk index with a weighted average."""
-    # New risk is a mix of old risk and the new event's risk
+    old_risk = stats["network_risk"]
     stats["network_risk"] = stats["network_risk"] * 0.7 + event_risk * 0.3
     stats["network_risk"] = min(100, stats["network_risk"])
+    if round(old_risk, 1) != round(stats["network_risk"], 1):
+        print(f"[!] Network Risk Update: {old_risk:.1f} -> {stats['network_risk']:.1f} (Event Score: {event_risk})")
     return stats["network_risk"]
 
 def decay_network_risk(factor=0.98):
     """Slowly reduce risk over time if no alerts occur."""
+    old_risk = stats["network_risk"]
     stats["network_risk"] *= factor
     if stats["network_risk"] < 0.1:
         stats["network_risk"] = 0
+    if round(old_risk, 1) != round(stats["network_risk"], 1):
+        print(f"[-] Network Risk Decay: {old_risk:.1f} -> {stats['network_risk']:.1f}")
     return stats["network_risk"]
 
 # Track packets per second
@@ -143,7 +148,6 @@ def get_stats():
         "total_packets": stats["total_packets"],
         "total_alerts": stats["total_alerts"],
         "by_type": dict(stats["by_type"]),
-        "by_tactic": dict(stats["by_tactic"]),
         "by_protocol": dict(stats["by_protocol"]),
         "by_severity": dict(stats["by_severity"]),
         "packets_per_second": round(pps, 1),
@@ -159,6 +163,14 @@ def cleanup_old_data():
         if not ip_activity[ip]:
             del ip_activity[ip]
 
+    for ip in list(port_scan_tracker.keys()):
+        # Since port_scan_tracker is a set without timestamps in the original implementation,
+        # we realistically can't prune it by time without changing its data structure.
+        # For simplicity in this script, we'll clear it periodically or rely on the SIEM's 
+        # broader IP tracking. A proper implementation would refactor port_scan_tracker 
+        # to track timestamps per port probed.
+        pass
+
     for ip in list(syn_tracker.keys()):
         syn_tracker[ip] = [t for t in syn_tracker[ip] if now - t <= SYN_FLOOD_WINDOW]
         if not syn_tracker[ip]:
@@ -170,7 +182,7 @@ def cleanup_old_data():
             del brute_force_tracker[ip]
 
     for ip in list(dns_tracker.keys()):
-        dns_tracker[ip] = [(t, s) for t, s in dns_tracker[ip] if now - t <= TIME_WINDOW]
+        dns_tracker[ip] = [(t, s) for t, s in dns_tracker[ip] if now - t <= DNS_TUNNEL_WINDOW]
         if not dns_tracker[ip]:
             del dns_tracker[ip]
 
@@ -178,6 +190,11 @@ def cleanup_old_data():
         outbound_tracker[ip] = [(t, b) for t, b in outbound_tracker[ip] if now - t <= EXFIL_WINDOW]
         if not outbound_tracker[ip]:
             del outbound_tracker[ip]
+
+    for key in list(beacon_tracker.keys()):
+        beacon_tracker[key] = [t for t in beacon_tracker[key] if now - t <= BEACON_WINDOW]
+        if not beacon_tracker[key]:
+            del beacon_tracker[key]
 
 
 
@@ -260,8 +277,6 @@ def _record_alert(event_type, message, details, severity, src_ip="", dst_ip="", 
 
     stats["total_alerts"] += 1
     stats["by_type"][event_type] += 1
-    if mitre.get("tactic"):
-        stats["by_tactic"][mitre["tactic"]] += 1
     stats["by_severity"][severity] += 1
 
     if src_ip and event_id:
@@ -302,6 +317,8 @@ def analyze_port_scan(src_ip, dst_port):
         alert_key = f"{src_ip}_SCAN"
         if alert_key not in alerted_ips:
             alerted_ips.add(alert_key)
+            # Clear tracker after alerting to avoid spam and simulate a window reset
+            port_scan_tracker[src_ip].clear()
             severity = "HIGH" if unique_ports >= SCAN_THRESHOLD * 2 else "MEDIUM"
             msg = f"Port Scan detected from {src_ip} ({unique_ports} unique ports probed)"
             return _record_alert("PORT_SCAN", msg,
@@ -440,7 +457,7 @@ def analyze_beaconing(src_ip, dst_ip):
         stdev = statistics.stdev(intervals) if len(intervals) > 1 else 0
         jitter = stdev / avg_interval if avg_interval > 0 else 1
 
-        if jitter <= BEACON_TOLERANCE and avg_interval >= 5:  # Regular interval >= 5s
+        if jitter <= BEACON_TOLERANCE and avg_interval >= BEACON_INTERVAL_MIN:  # Regular interval
             alert_key = f"{key}_BEACON"
             if alert_key not in alerted_ips:
                 alerted_ips.add(alert_key)
@@ -477,7 +494,7 @@ def analyze_ransomware_behavior(signal_type, data):
 
     # Multi-signal evaluation
     signals = []
-    if file_count >= 100: signals.append(f"High file mods ({file_count}/60s)")
+    if file_count >= RANSOMWARE_FILE_MODS: signals.append(f"High file mods ({file_count}/{RANSOMWARE_WINDOW}s)")
     if outbound_count >= 20: signals.append(f"Network spike ({outbound_count} unique IPs)")
     if proc_count >= 5: signals.append(f"Suspicious proc activity ({proc_count} newly spawned)")
 

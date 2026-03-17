@@ -969,7 +969,6 @@
     <nav class="nav-links">
       <div class="nav-item active" onclick="switchView('overview')"><i data-lucide="layout-dashboard"></i> Dashboard
       </div>
-      <div class="nav-item" onclick="switchView('threats')"><i data-lucide="zap"></i> Threat Analysis</div>
       <div class="nav-item" onclick="switchView('logs')"><i data-lucide="database"></i> Security Logs</div>
       <div class="nav-item" onclick="switchView('traffic')"><i data-lucide="bar-chart-3"></i> Traffic Intel</div>
       <div class="nav-item" onclick="switchView('monitoring')"><i data-lucide="activity"></i> Network Monitor</div>
@@ -1150,23 +1149,7 @@
         </div>
       </div>
 
-      <!-- VIEW THREATS -->
-      <div id="view-threats" class="view">
-        <div class="grid-main" style="grid-template-columns: 1.2fr 0.8fr;">
-          <div class="chart-box">
-            <div class="chart-header">
-              <div class="chart-title"><i data-lucide="flame"></i> Security Pulse Feed</div>
-            </div>
-            <div class="scroll-list" id="alertFeed"></div>
-          </div>
-          <div class="chart-box">
-            <div class="chart-header">
-              <div class="chart-title"><i data-lucide="bar-chart-3"></i> Tactic Distribution</div>
-            </div>
-            <div style="height: 480px;"><canvas id="alertTypeChart"></canvas></div>
-          </div>
-        </div>
-      </div>
+
 
       <!-- VIEW SECURITY LOGS (REDESIGNED) -->
       <div id="view-logs" class="view">
@@ -1443,57 +1426,7 @@
       options: { responsive: true, maintainAspectRatio: false, cutout: '85%', plugins: { legend: { position: 'bottom', labels: { padding: 30, usePointStyle: true, font: { size: 12 } } } } }
     });
 
-    const alertTypeChart = new Chart(document.getElementById('alertTypeChart'), {
-      type: 'bar',
-      data: {
-        labels: ['Discovery', 'Credential Access', 'Command and Control', 'Exfiltration', 'Impact'],
-        datasets: [{
-          label: 'Tactic Funnel',
-          data: [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0]],
-          backgroundColor: (ctx) => {
-            const colors = [
-              'rgba(6, 182, 212, 0.6)',  // Cyan (Discovery)
-              'rgba(139, 92, 246, 0.6)', // Purple (Access)
-              'rgba(245, 158, 11, 0.6)',  // Orange (C2)
-              'rgba(239, 68, 68, 0.6)',   // Red (Exfil)
-              'rgba(16, 185, 129, 0.6)',  // Green (Impact)
-            ];
-            return colors[ctx.dataIndex] || 'rgba(255, 255, 255, 0.5)';
-          },
-          borderColor: 'rgba(255, 255, 255, 0.1)',
-          borderWidth: 1,
-          borderRadius: 4,
-          barPercentage: 0.85
-        }]
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          x: {
-            display: false,
-            stacked: false,
-            // Centering logic via fixed range or zero-centered data
-          },
-          y: {
-            grid: { display: false },
-            ticks: {
-              color: '#94a3b8',
-              font: { weight: '800', size: 10 }
-            }
-          }
-        },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => `Events: ${ctx.raw[1] - ctx.raw[0]}`
-            }
-          }
-        }
-      }
-    });
+
 
 
 
@@ -1571,53 +1504,44 @@
       const totalAlerts = s.total_alerts ?? 0;
       totalAlertsElement.textContent = totalAlerts.toLocaleString();
 
-      // --- FIX: Global Threat Level — 4-tier severity model ---
-      const bySev = s.by_severity || {};
-      const nCritical = bySev.CRITICAL || 0;
-      const nHigh = bySev.HIGH || 0;
-      const nMedium = bySev.MEDIUM || 0;
-      const nLow = bySev.LOW || 0;
+      // --- Real-time Global Threat Level — Driven by network_risk (0-100) ---
+      const risk = d.network_risk ?? 0;
       const threatLevelBar = document.getElementById('threatLevelBar');
       const threatLevelTxt = document.getElementById('threatLevelTxt');
+      
       if (threatLevelBar && threatLevelTxt) {
-        if (nCritical > 0 || nHigh > 0) {
-          const barPct = Math.min(100, 60 + ((nCritical + nHigh) / 10) * 40);
-          threatLevelBar.style.width = barPct + '%';
-          threatLevelBar.style.background = 'var(--red)';
-          threatLevelTxt.textContent = 'CRITICAL';
-          threatLevelTxt.style.color = 'var(--red)';
-        } else if (nMedium > 0) {
-          const barPct = Math.min(59, 30 + (nMedium / 10) * 29);
-          threatLevelBar.style.width = barPct + '%';
-          threatLevelBar.style.background = 'var(--orange)';
-          threatLevelTxt.textContent = 'ELEVATED';
-          threatLevelTxt.style.color = 'var(--orange)';
-        } else if (nLow > 0) {
-          const barPct = Math.min(29, 10 + (nLow / 20) * 19);
-          threatLevelBar.style.width = barPct + '%';
-          threatLevelBar.style.background = 'var(--orange)';
-          threatLevelTxt.textContent = 'GUARDED';
-          threatLevelTxt.style.color = 'var(--orange)';
+        let level, color, width;
+        
+        if (risk >= 76) {
+          level = 'CRITICAL';
+          color = 'var(--red)';
+          width = '100%';
+        } else if (risk >= 41) {
+          level = 'ELEVATED';
+          color = 'var(--orange)';
+          width = '65%';
+        } else if (risk >= 16) {
+          level = 'GUARDED';
+          color = '#06b6d4'; // Cyan
+          width = '35%';
         } else {
-          threatLevelBar.style.width = '8%';
-          threatLevelBar.style.background = 'var(--green)';
-          threatLevelTxt.textContent = 'SECURE';
-          threatLevelTxt.style.color = 'var(--green)';
+          level = 'SECURE';
+          color = 'var(--green)';
+          width = '8%';
         }
+
+        if (threatLevelTxt.textContent !== level) {
+          console.log(`[!] Threat Level Change: ${threatLevelTxt.textContent} -> ${level} (Risk: ${risk.toFixed(1)})`);
+          threatLevelTxt.textContent = level;
+          threatLevelTxt.style.color = color;
+          threatLevelBar.style.background = color;
+        }
+        threatLevelBar.style.width = width;
       }
 
       document.getElementById('pps').textContent = s.packets_per_second ?? 0;
 
-      const critEl = document.getElementById('criticalCount');
-      if (critEl) critEl.textContent = nCritical;
 
-      const byTactic = s.by_tactic || {};
-      const tacticOrder = ['Discovery', 'Credential Access', 'Command and Control', 'Exfiltration', 'Impact'];
-      alertTypeChart.data.datasets[0].data = tacticOrder.map(t => {
-        const val = byTactic[t] || 0;
-        return [-val / 2, val / 2];
-      });
-      alertTypeChart.update('none');
 
 
 
@@ -1654,7 +1578,6 @@
         uptimeSynced = true;
       }
 
-      if (d.alerts) renderAlerts(d.alerts);
       if (d.packets) renderPackets(d.packets);
 
       if (d.network_risk !== undefined) updateRiskGauge(d.network_risk);
@@ -1663,30 +1586,96 @@
         riskTrendChart.data.datasets[0].data = d.risk_trend.map(r => r.score);
         riskTrendChart.update('none');
       }
+
+      // Real-time Topology Update
+      if (d.packets && d.packets.length > 0) {
+        processPacketsForTopology(d.packets);
+      }
     }
 
-    function renderAlerts(alerts) {
-      const feed = document.getElementById('alertFeed');
-      feed.innerHTML = alerts.map(a => {
-        const color = a.severity === 'critical' ? 'var(--red)' : a.severity === 'high' ? 'var(--red)' : a.severity === 'medium' ? 'var(--orange)' : 'var(--green)';
-        return `
-          <div class="threat-item ${a.severity}" style="border-left: 4px solid ${color}; background: rgba(255,255,255,0.02); margin-bottom: 12px; padding: 16px; border-radius: 12px; transition: all 0.2s">
-            <div style="display:flex; justify-content:space-between; margin-bottom:8px">
-              <span style="font-size:10px; font-weight:800; color:${color}; text-transform:uppercase; letter-spacing:1px">${a.severity}</span>
-              <span style="font-size:10px; color:var(--text-dim)">${new Date(a.timestamp * 1000).toLocaleTimeString()}</span>
-            </div>
-            <div style="font-weight:700; margin-bottom:4px; color:#fff">${a.description}</div>
-            <div style="font-size:11px; color:var(--text-dim); display:flex; gap:12px">
-               <span><i data-lucide="target" style="width:12px; vertical-align:middle; margin-right:4px"></i>${a.src_ip}</span>
-               <span>→</span>
-               <span>${a.dst_ip}</span>
-            </div>
-            ${a.mitre_id ? `<div style="margin-top:8px; font-size:10px; color:var(--purple); font-weight:700">[${a.mitre_id}] ${a.mitre_technique}</div>` : ''}
-          </div>
-        `;
-      }).join('');
-      lucide.createIcons();
+    // --- Real-time Topology State ---
+    let topoNodes = [];
+    let topoLinks = [];
+    let topoSimulation;
+    let topoSvg, topoG;
+    const TOPO_TIMEOUT = 120000; // 2 minutes in ms
+
+    function processPacketsForTopology(packets) {
+      const now = Date.now();
+      let changed = false;
+
+      packets.forEach(p => {
+        if (!p.src_ip || !p.dst_ip) return;
+
+        // Ensure nodes exist
+        [p.src_ip, p.dst_ip].forEach(ip => {
+          let node = topoNodes.find(n => n.id === ip);
+          if (!node) {
+            node = { id: ip, level: 'low', isLocal: ip === window.localIp, lastSeen: now, attack_types: [] };
+            topoNodes.push(node);
+            changed = true;
+          } else {
+            node.lastSeen = now;
+          }
+        });
+        // Ensure link exists
+        let link = topoLinks.find(l => (l.src_id === p.src_ip && l.dst_id === p.dst_ip) || (l.src_id === p.dst_id && l.dst_id === p.src_ip));
+        const isOutbound = p.src_ip === window.localIp;
+        
+        if (!link) {
+          link = { 
+            source: p.src_ip, 
+            target: p.dst_ip, 
+            src_id: p.src_ip, 
+            dst_id: p.dst_ip, 
+            weight: 1, 
+            isThreat: p.is_threat, 
+            lastSeen: now,
+            lastInboundPulse: !isOutbound ? now : 0,
+            lastOutboundPulse: isOutbound ? now : 0
+          };
+          topoLinks.push(link);
+          changed = true;
+        } else {
+          link.weight++;
+          link.lastSeen = now;
+          if (isOutbound) link.lastOutboundPulse = now;
+          else link.lastInboundPulse = now;
+          if (p.is_threat) link.isThreat = true;
+        }
+      });
+
+      if (changed && document.getElementById('view-network').classList.contains('active')) {
+        updateTopologyDisplay();
+      }
     }
+
+    function pruneTopology() {
+      const now = Date.now();
+      const nodeCount = topoNodes.length;
+      const linkCount = topoLinks.length;
+
+      topoLinks = topoLinks.filter(l => (now - l.lastSeen) < TOPO_TIMEOUT);
+      
+      // Only keep nodes that have active links or are very recent
+      const activeNodeIds = new Set();
+      topoLinks.forEach(l => {
+        activeNodeIds.add(typeof l.source === 'object' ? l.source.id : l.source);
+        activeNodeIds.add(typeof l.target === 'object' ? l.target.id : l.target);
+      });
+
+      topoNodes = topoNodes.filter(n => activeNodeIds.has(n.id) || (n.isLocal) || (now - n.lastSeen) < TOPO_TIMEOUT);
+
+      if (topoNodes.length !== nodeCount || topoLinks.length !== linkCount) {
+        if (document.getElementById('view-network').classList.contains('active')) {
+          updateTopologyDisplay();
+        }
+      }
+    }
+    setInterval(pruneTopology, 10000);
+
+
+
 
     function renderPackets(packets) {
       window.lastPackets = packets; // Store for investigation lookup
@@ -1866,162 +1855,229 @@
       } catch (e) { }
     }
 
-    let topoSimulation;
     async function drawTopology() {
       try {
         const resp = await fetch('/api/topology');
         const data = await resp.json();
-        const container = d3.select('#topoContainer');
-        const W = container.node().offsetWidth;
-        const H = container.node().offsetHeight;
+        window.localIp = data.local_ip;
 
-        container.selectAll('svg').remove();
-        const svg = container.append('svg')
-          .attr('class', 'topo-svg')
-          .attr('viewBox', [0, 0, W, H]);
-
-        const g = svg.append('g');
-
-        // Zoom functionality
-        svg.call(d3.zoom().scaleExtent([0.1, 4]).on('zoom', (e) => g.attr('transform', e.transform)));
-
-        if (!data.links || data.links.length === 0) {
-          g.append('text').attr('x', W / 2).attr('y', H / 2).attr('text-anchor', 'middle').attr('fill', '#94a3b8').text('No active connections detected...');
-          return;
-        }
-
-        // Prepare data
-        const nodes = Object.values(data.threat_map).map(t => ({
+        // Sync local state with API data
+        const now = Date.now();
+        const apiNodes = Object.values(data.threat_map).map(t => ({
           id: t.ip,
           level: t.level,
           isLocal: t.ip === data.local_ip,
+          lastSeen: now,
           attack_types: t.attack_types || []
         }));
 
-        const links = data.links.map(l => ({
+        const apiLinks = data.links.map(l => ({
           source: l.src_ip,
           target: l.dst_ip,
+          src_id: l.src_ip,
+          dst_id: l.dst_ip,
           weight: l.weight,
-          isThreat: l.threat_count > 0
+          isThreat: l.threat_count > 0,
+          lastSeen: now
         }));
 
-        // Simulation
-        if (topoSimulation) topoSimulation.stop();
-        topoSimulation = d3.forceSimulation(nodes)
-          .force('link', d3.forceLink(links).id(d => d.id).distance(200))
+        // Merge logic: keep existing node positions if they exist
+        apiNodes.forEach(an => {
+           if (!topoNodes.find(n => n.id === an.id)) topoNodes.push(an);
+        });
+        apiLinks.forEach(al => {
+           if (!topoLinks.find(l => (l.src_id === al.src_id && l.dst_id === al.dst_id))) topoLinks.push(al);
+        });
+
+        updateTopologyDisplay();
+      } catch (e) { console.error("Topology Sync Error:", e); }
+    }
+
+    function updateTopologyDisplay() {
+      const container = d3.select('#topoContainer');
+      const W = container.node().offsetWidth;
+      const H = container.node().offsetHeight;
+
+      if (!topoSvg) {
+        topoSvg = container.append('svg')
+          .attr('class', 'topo-svg')
+          .attr('viewBox', [0, 0, W, H]);
+        
+        topoG = topoSvg.append('g');
+        
+        // Dedicated layers for correct Z-indexing
+        topoG.append('g').attr('id', 'topoLinksLayer');
+        topoG.append('g').attr('id', 'topoParticlesLayer');
+        topoG.append('g').attr('id', 'topoNodesLayer');
+
+        // Add glow filter
+        const defs = topoSvg.append('defs');
+        const filter = defs.append('filter').attr('id', 'glow');
+        filter.append('feGaussianBlur').attr('stdDeviation', '2.5').attr('result', 'coloredBlur');
+        const feMerge = filter.append('feMerge');
+        feMerge.append('feMergeNode').attr('in', 'coloredBlur');
+        feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
+
+        topoSvg.call(d3.zoom().scaleExtent([0.1, 4]).on('zoom', (e) => topoG.attr('transform', e.transform)));
+      }
+
+
+      if (topoNodes.length === 0) {
+        topoG.selectAll('*').remove();
+        topoG.append('text').attr('x', W / 2).attr('y', H / 2).attr('text-anchor', 'middle').attr('fill', '#94a3b8').text('No active connections detected...');
+        return;
+      } else {
+        topoG.select('text').remove();
+      }
+
+      // Simulation
+      if (!topoSimulation) {
+        topoSimulation = d3.forceSimulation(topoNodes)
+          .force('link', d3.forceLink(topoLinks).id(d => d.id).distance(200))
           .force('charge', d3.forceManyBody().strength(-400))
           .force('center', d3.forceCenter(W / 2, H / 2))
           .force('collision', d3.forceCollide().radius(50));
+      } else {
+        topoSimulation.nodes(topoNodes);
+        topoSimulation.force('link').links(topoLinks);
+        topoSimulation.alpha(0.3).restart();
+      }
 
-        // Links
-        const link = g.append('g')
-          .selectAll('line')
-          .data(links)
-          .join('line')
-          .attr('class', d => `topo-link ${d.isThreat ? 'threat-link' : ''}`)
-          .attr('stroke', d => d.isThreat ? '#ff3366' : '#00f2ff')
-          .attr('stroke-width', d => Math.min(d.weight / 5 + 1, 5));
+      // Links Join
+      const link = topoG.select('#topoLinksLayer').selectAll('.topo-link')
 
-        // Flow Particles
-        const particles = g.append('g');
-        function animateFlow() {
-          particles.selectAll('.flow-particle')
-            .data(links.filter(l => l.weight > 2)) // Only show flow for active links
-            .join('circle')
-            .attr('class', 'flow-particle')
-            .attr('r', 1.5)
-            .each(function (d) {
-              const particle = d3.select(this);
-              function repeat() {
-                particle
-                  .attr('cx', d.source.x)
-                  .attr('cy', d.source.y)
-                  .transition()
-                  .duration(2000 / (1 + d.weight / 50))
-                  .ease(d3.easeLinear)
-                  .attr('cx', d.target.x)
-                  .attr('cy', d.target.y)
-                  .on('end', repeat);
-              }
-              repeat();
-            });
-        }
+        .data(topoLinks, d => `${d.src_id}-${d.dst_id}`)
+        .join(
+          enter => enter.append('line')
+            .attr('class', d => `topo-link ${d.isThreat ? 'threat-link' : ''}`)
+            .attr('stroke', d => d.isThreat ? '#ff3366' : '#00f2ff')
+            .style('opacity', 0)
+            .call(enter => enter.transition().duration(500).style('opacity', 1)),
+          update => update
+            .attr('class', d => `topo-link ${d.isThreat ? 'threat-link' : ''}`)
+            .attr('stroke', d => d.isThreat ? '#ff3366' : '#00f2ff'),
+          exit => exit.transition().duration(500).style('opacity', 0).remove()
+        )
+        .attr('stroke-width', d => Math.min(d.weight / 5 + 1, 5));
 
-        // Nodes
-        const node = g.append('g')
-          .selectAll('.node-group')
-          .data(nodes)
-          .join('g')
-          .attr('class', 'node-group')
-          .call(d3.drag()
-            .on('start', dragstarted)
-            .on('drag', dragged)
-            .on('end', dragended));
+      // Nodes Join
+      const node = topoG.select('#topoNodesLayer').selectAll('.node-group')
 
-        node.append('circle')
-          .attr('class', d => `topo-node ${d.isLocal ? 'local' : ''} threat-${d.level}`)
-          .attr('r', d => d.isLocal ? 14 : 9)
-          .attr('fill', d => d.isLocal ? '#8b5cf6' : '#0f172a');
+        .data(topoNodes, d => d.id)
+        .join(
+          enter => {
+            const g = enter.append('g').attr('class', 'node-group');
+            g.append('circle')
+              .attr('class', d => `topo-node ${d.isLocal ? 'local' : ''} threat-${d.level}`)
+              .attr('r', d => d.isLocal ? 14 : 9)
+              .attr('fill', d => d.isLocal ? '#8b5cf6' : '#0f172a');
+            
+            g.append('text')
+              .attr('class', d => `topo-label ${d.isLocal ? 'local-label' : ''}`)
+              .attr('dy', d => d.isLocal ? -24 : -18)
+              .attr('text-anchor', 'middle')
+              .text(d => d.isLocal ? 'COMMAND_HUB' : d.id);
+            
+            g.style('opacity', 0).transition().duration(500).style('opacity', 1);
+            return g;
+          },
+          update => {
+             update.select('circle').attr('class', d => `topo-node ${d.isLocal ? 'local' : ''} threat-${d.level}`);
+             return update;
+          },
+          exit => exit.transition().duration(500).style('opacity', 0).remove()
+        )
+        .call(d3.drag()
+          .on('start', dragstarted)
+          .on('drag', dragged)
+          .on('end', dragended));
 
-        node.append('text')
-          .attr('class', d => `topo-label ${d.isLocal ? 'local-label' : ''}`)
-          .attr('dy', d => d.isLocal ? -24 : -18)
-          .attr('text-anchor', 'middle')
-          .text(d => d.isLocal ? 'COMMAND_HUB' : d.id);
+      // Tooltips
+      const tooltip = d3.select('#topoTooltip');
+      node.on('mouseover', (e, d) => {
+        tooltip.style('display', 'block')
+          .html(`
+            <div style="color:var(--accent); font-weight:800; margin-bottom:4px">${d.id}</div>
+            <div style="font-size:10px; opacity:0.8; margin-bottom:8px">${d.isLocal ? 'Local Endpoint' : 'Remote Host'}</div>
+            <div style="display:flex; justify-content:space-between; gap:20px">
+              <span style="color:var(--text-dim)">Risk Level:</span>
+               <b style="color:${d.level === 'critical' || d.level === 'high' ? 'var(--red)' : d.level === 'medium' ? 'var(--orange)' : 'var(--green)'}">${d.level.toUpperCase()}</b>
+            </div>
+          `);
+      })
+      .on('mousemove', (e) => {
+        tooltip.style('left', (e.offsetX + 15) + 'px').style('top', (e.offsetY - 15) + 'px');
+      })
+      .on('mouseleave', () => tooltip.style('display', 'none'));
 
-        // Tooltip
-        const tooltip = d3.select('#topoTooltip');
-        node.on('mouseover', (e, d) => {
-          tooltip.style('display', 'block')
-            .html(`
-              <div style="color:var(--accent); font-weight:800; margin-bottom:4px">${d.id}</div>
-              <div style="font-size:10px; opacity:0.8; margin-bottom:8px">${d.isLocal ? 'Local Endpoint' : 'Remote Host'}</div>
-              <div style="display:flex; justify-content:space-between; gap:20px">
-                <span style="color:var(--text-dim)">Risk Level:</span>
-                 <b style="color:${d.level === 'critical' || d.level === 'high' ? 'var(--red)' : d.level === 'medium' ? 'var(--orange)' : 'var(--green)'}">${d.level.toUpperCase()}</b>
-              </div>
-              ${d.attack_types.length ? `<div style="margin-top:8px; font-size:10px; color:var(--red)">${d.attack_types.join(', ')}</div>` : ''}
-            `);
-        })
-          .on('mousemove', (e) => {
-            tooltip.style('left', (e.offsetX + 15) + 'px').style('top', (e.offsetY - 15) + 'px');
-          })
-          .on('mouseleave', () => tooltip.style('display', 'none'));
+      topoSimulation.on('tick', () => {
+        link
+          .attr('x1', d => d.source.x)
+          .attr('y1', d => d.source.y)
+          .attr('x2', d => d.target.x)
+          .attr('y2', d => d.target.y);
 
-        topoSimulation.on('tick', () => {
-          link
-            .attr('x1', d => d.source.x)
-            .attr('y1', d => d.source.y)
-            .attr('x2', d => d.target.x)
-            .attr('y2', d => d.target.y);
+        node.attr('transform', d => `translate(${d.x},${d.y})`);
+      });
 
-          node.attr('transform', d => `translate(${d.x},${d.y})`);
+      // --- Directional Animation Particles ---
+      if (!window.flowAnimInterval) {
+        window.flowAnimInterval = setInterval(() => {
+          if (!document.getElementById('view-network').classList.contains('active')) return;
+          const now = Date.now();
+          const activeLinks = topoLinks.filter(l => (now - l.lastSeen) < 10000); // Only animate active-ish links
 
-          // Animate particles once after first layout stable
-          if (topoSimulation.alpha() < 0.1 && !particles.node().childElementCount) {
-            animateFlow();
-          }
-        });
+          activeLinks.forEach(l => {
+            // Spawn inbound particle (Remote -> Hub)
+            if (now - l.lastInboundPulse < 2000) {
+              spawnParticle(l, false);
+            }
+            // Spawn outbound particle (Hub -> Remote)
+            if (now - l.lastOutboundPulse < 2000) {
+              spawnParticle(l, true);
+            }
+          });
+        }, 800);
+      }
 
-        function dragstarted(event) {
-          if (!event.active) topoSimulation.alphaTarget(0.3).restart();
-          event.subject.fx = event.subject.x;
-          event.subject.fy = event.subject.y;
-        }
+      function spawnParticle(l, isOutbound) {
+        const start = isOutbound ? l.source : l.target;
+        const end = isOutbound ? l.target : l.source;
+        
+        topoG.select('#topoParticlesLayer').append('circle')
+          .attr('r', 4)
+          .attr('fill', isOutbound ? '#00FFFF' : '#A855F7')
+          .attr('filter', 'url(#glow)')
+          .attr('cx', start.x)
+          .attr('cy', start.y)
+          .style('opacity', 0.9)
+          .transition()
+          .duration(2000)
+          .ease(d3.easeLinear)
+          .attr('cx', end.x)
+          .attr('cy', end.y)
+          .style('opacity', 0)
+          .remove();
+      }
 
-        function dragged(event) {
-          event.subject.fx = event.x;
-          event.subject.fy = event.y;
-        }
 
-        function dragended(event) {
-          if (!event.active) topoSimulation.alphaTarget(0);
-          event.subject.fx = null;
-          event.subject.fy = null;
-        }
 
-      } catch (e) { console.error("D3 Topology Error:", e); }
+      function dragstarted(event) {
+        if (!event.active) topoSimulation.alphaTarget(0.3).restart();
+        event.subject.fx = event.subject.x;
+        event.subject.fy = event.subject.y;
+      }
+      function dragged(event) {
+        event.subject.fx = event.x;
+        event.subject.fy = event.y;
+      }
+      function dragended(event) {
+        if (!event.active) topoSimulation.alphaTarget(0);
+        event.subject.fx = null;
+        event.subject.fy = null;
+      }
     }
+
 
     setInterval(loadExtras, 10000);
     loadExtras();

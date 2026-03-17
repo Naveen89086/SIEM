@@ -218,7 +218,6 @@ async def broadcast_loop():
             "network_risk": get_network_risk(),
             "risk_trend": get_risk_trend(30),
             "system": get_system_metrics(),
-            "alerts": get_recent_alerts(15),
             "is_running": is_running,
         }
 

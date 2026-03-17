@@ -4,21 +4,34 @@ TSHARK_PATH = r"C:\Program Files\Wireshark\tshark.exe"
 INTERFACE = "Wi-Fi"
 
 # -------------------------
-# Detection Thresholds
+# Detection Thresholds (Real-time Single Laptop)
 # -------------------------
-THRESHOLD = 20           # packets per window for rate-limit
-TIME_WINDOW = 60         # seconds
-SCAN_THRESHOLD = 5       # distinct ports for port-scan
-SYN_THRESHOLD = 50       # SYN packets per window for SYN flood
-SYN_FLOOD_WINDOW = 30    # seconds
-BRUTE_FORCE_THRESHOLD = 10  # connections to auth ports per window
-BRUTE_FORCE_WINDOW = 60
-DNS_TUNNEL_SIZE = 200    # suspicious DNS payload bytes
-DNS_TUNNEL_RATE = 15     # DNS queries per window
-EXFIL_SIZE_THRESHOLD = 5_000_000  # 5MB outbound in window
-EXFIL_WINDOW = 120       # seconds
-BEACON_TOLERANCE = 0.15  # jitter tolerance for beaconing (15%)
-BEACON_MIN_COUNT = 5     # minimum callbacks to detect beaconing
+THRESHOLD = 500            # packets per window for rate-limit (DoS)
+TIME_WINDOW = 10           # seconds for rate-limit
+
+SCAN_THRESHOLD = 15        # distinct ports for port-scan
+SCAN_WINDOW = 60           # seconds for port-scan
+
+SYN_THRESHOLD = 60         # bare SYN packets per window for SYN flood
+SYN_FLOOD_WINDOW = 1       # seconds for SYN flood
+
+BRUTE_FORCE_THRESHOLD = 5  # failed logins / connections to auth ports per window
+BRUTE_FORCE_WINDOW = 180   # seconds (3 minutes)
+
+DNS_TUNNEL_SIZE = 60       # average suspicious DNS payload length
+DNS_TUNNEL_RATE = 15       # DNS queries per window to same domain
+DNS_TUNNEL_WINDOW = 60     # seconds (1 minute)
+
+EXFIL_SIZE_THRESHOLD = 50_000_000  # 50MB outbound in window
+EXFIL_WINDOW = 300         # seconds (5 minutes)
+
+BEACON_TOLERANCE = 0.05    # jitter tolerance for beaconing (5%)
+BEACON_MIN_COUNT = 8       # minimum callbacks to detect beaconing
+BEACON_INTERVAL_MIN = 5    # minimum seconds between beacons
+BEACON_WINDOW = 3600       # seconds (60 minutes)
+
+RANSOMWARE_FILE_MODS = 40
+RANSOMWARE_WINDOW = 10
 
 # -------------------------
 # MITRE ATT&CK Mapping

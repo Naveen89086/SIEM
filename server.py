@@ -6,6 +6,7 @@ import asyncio
 import json
 import threading
 import time
+import os
 
 import psutil
 import uvicorn
@@ -19,7 +20,7 @@ from config import (
 )
 from packet_capture import start_capture
 from detector import (
-    analyze_packet_header, cleanup_old_data, get_stats, 
+    analyze_packet_header, cleanup_old_data, get_stats,
     get_network_risk, decay_network_risk
 )
 from logger import log_event, log_packet, get_recent_alerts, get_recent_packets, get_all_alerts
@@ -45,7 +46,7 @@ capture_thread = None
 is_running = False
 start_time = time.time()
 connected_clients: list[WebSocket] = []
-intel_clients: list[WebSocket] = [] # Dedicated clients for traffic intel view
+intel_clients: list[WebSocket] = []  # Dedicated clients for traffic intel view
 packet_buffer: list[dict] = []
 buffer_lock = threading.Lock()
 
@@ -58,22 +59,22 @@ prev_time = time.time()
 
 def get_system_metrics():
     global prev_net_io, prev_time
-    
+
     curr_net_io = psutil.net_io_counters()
     curr_time = time.time()
     dt = curr_time - prev_time
-    
+
     # Calculate speed in Mbps
     sent_speed = ((curr_net_io.bytes_sent - prev_net_io.bytes_sent) * 8) / (dt * 1024 * 1024) if dt > 0 else 0
     recv_speed = ((curr_net_io.bytes_recv - prev_net_io.bytes_recv) * 8) / (dt * 1024 * 1024) if dt > 0 else 0
-    
+
     prev_net_io = curr_net_io
     prev_time = curr_time
 
     cpu = psutil.cpu_percent(interval=0)
     mem = psutil.virtual_memory()
     disk = psutil.disk_usage("/")
-    
+
     return {
         "cpu_percent": cpu,
         "ram_percent": mem.percent,
@@ -97,18 +98,25 @@ def get_system_metrics():
 # -------------------------
 def is_internal_ip(ip):
     """Check if an IP address is internal (RFC1918) or localhost."""
-    if not ip or ip == "Unknown": return False
+    if not ip or ip == "Unknown":
+        return False
     parts = ip.split('.')
-    if len(parts) != 4: return False
-    
+    if len(parts) != 4:
+        return False
+
     p1 = int(parts[0])
     p2 = int(parts[1])
-    
-    if p1 == 10: return True
-    if p1 == 172 and (16 <= p2 <= 31): return True
-    if p1 == 192 and p2 == 168: return True
-    if p1 == 127: return True
+
+    if p1 == 10:
+        return True
+    if p1 == 172 and (16 <= p2 <= 31):
+        return True
+    if p1 == 192 and p2 == 168:
+        return True
+    if p1 == 127:
+        return True
     return False
+
 
 # -------------------------
 # Capture Thread
@@ -142,25 +150,27 @@ def capture_worker():
             dst_port = ""
             proto_name = f"PROTO-{proto}"
 
-            if proto == "6": # TCP
+            if proto == "6":  # TCP
                 src_port, dst_port, proto_name = fields[3], fields[4], "TCP"
-            elif proto == "17": # UDP
+            elif proto == "17":  # UDP
                 src_port, dst_port, proto_name = fields[5], fields[6], "UDP"
-            elif proto == "1": # ICMP
+            elif proto == "1":  # ICMP
                 proto_name = "ICMP"
-            
+
             length = int(fields[7]) if fields[7].isdigit() else 0
             flags = fields[8]
-            
+
             # DNS details (9, 10)
             dns_query = fields[9]
             dns_type = fields[10]
-            if dns_query: proto_name = "DNS"
+            if dns_query:
+                proto_name = "DNS"
 
             # HTTP details (11, 12)
             http_host = fields[11]
             http_method = fields[12]
-            if http_host or http_method: proto_name = "HTTP"
+            if http_host or http_method:
+                proto_name = "HTTP"
 
             # TLS SNI (13)
             tls_sni = fields[13]
@@ -194,7 +204,7 @@ def capture_worker():
 
             # --- Live Threat Layer ---
             is_threat, threat_msg = analyze_packet_header(packet_data)
-            
+
             # Additional realtime checks for "Network Monitor" view
             security_status = "SAFE"
             if is_threat:
@@ -202,7 +212,7 @@ def capture_worker():
             elif dst_port in ["22", "3389", "4444", "445"]:
                 security_status = "SUSPICIOUS"
                 threat_msg = f"Suspicious port access: {dst_port}"
-            elif length > 10000: # Simple large packet anomaly
+            elif length > 10000:  # Simple large packet anomaly
                 security_status = "SUSPICIOUS"
                 threat_msg = "Large packet anomaly detected"
 
@@ -214,7 +224,7 @@ def capture_worker():
             traffic_engine.process_packet(packet_data)
 
             with buffer_lock:
-                packet_data["id"] = int(time.time() * 1000000) # Microsecond ID
+                packet_data["id"] = int(time.time() * 1000000)  # Microsecond ID
                 packet_buffer.append(packet_data)
 
     except Exception as e:
@@ -223,13 +233,15 @@ def capture_worker():
         is_running = False
         if capture_proc and capture_proc.poll() is None:
             capture_proc.terminate()
+
+
 # -------------------------
 # Redirection Server
 # -------------------------
 def http_redirection_worker():
     """Very basic HTTP server to redirect to HTTPS."""
     from http.server import HTTPServer, BaseHTTPRequestHandler
-    
+
     class RedirectHandler(BaseHTTPRequestHandler):
         def do_GET(self):
             # Dynamic redirect to current LAN IP / Host
@@ -237,13 +249,14 @@ def http_redirection_worker():
             self.send_response(301)
             self.send_header('Location', new_url)
             self.end_headers()
-            
+
     try:
         httpd = HTTPServer(('0.0.0.0', 80), RedirectHandler)
         print(f"[+] HTTP to HTTPS Redirector running on port 80")
         httpd.serve_forever()
     except Exception as e:
         print(f"[WARN] Could not start HTTP redirection (Port 80 might be in use): {e}")
+
 
 # Import BASE_URL for redirection
 from config import BASE_URL
@@ -255,7 +268,7 @@ from config import BASE_URL
 async def risk_maintenance_loop():
     """Periodically decay risk and log it to database for historical trends."""
     while True:
-        await asyncio.sleep(10) # Every 10 seconds
+        await asyncio.sleep(10)  # Every 10 seconds
         new_risk = decay_network_risk(factor=0.95)
         insert_risk_score(new_risk)
 
@@ -291,12 +304,13 @@ async def broadcast_loop():
         for ws in connected_clients:
             try:
                 await ws.send_text(msg)
-            except:
+            except Exception:
                 disconnected.append(ws)
 
         for ws in disconnected:
             if ws in connected_clients:
                 connected_clients.remove(ws)
+
 
 async def traffic_intel_broadcast_loop():
     """Send aggregated traffic intelligence metrics to all /ws/traffic-intel clients."""
@@ -313,7 +327,7 @@ async def traffic_intel_broadcast_loop():
         for ws in intel_clients:
             try:
                 await ws.send_text(msg)
-            except:
+            except Exception:
                 disconnected.append(ws)
 
         for ws in disconnected:
@@ -367,8 +381,12 @@ async def api_events(
 ):
     """Paginated event search with filters."""
     return JSONResponse(search_security_logs(
-        alert_type=event_type, severity=severity,
-        src_ip=src_ip, search=search, limit=limit, offset=offset
+        alert_type=event_type,
+        severity=severity,
+        src_ip=src_ip,
+        search=search,
+        limit=limit,
+        offset=offset
     ))
 
 
@@ -420,7 +438,6 @@ async def api_incident_detail(incident_id: int):
 async def api_incident_update(incident_id: int):
     """Update incident status or add a note."""
     from fastapi import Request
-    # Parse body manually for simplicity
     import json as jsonlib
     return JSONResponse({"error": "Use POST"}, status_code=405)
 
@@ -495,15 +512,15 @@ async def api_topology():
     import socket
     try:
         local_ip = socket.gethostbyname(socket.gethostname())
-    except:
+    except Exception:
         local_ip = "127.0.0.1"
 
     topo = get_network_topology()
     enriched = []
-    
+
     unique_ips = set()
-    node_packet_counts = {} # ip -> count
-    
+    node_packet_counts = {}  # ip -> count
+
     for entry in topo:
         s_ip, d_ip, w = entry["src_ip"], entry["dst_ip"], entry["weight"]
         unique_ips.add(s_ip)
@@ -515,7 +532,6 @@ async def api_topology():
     threat_map = {}
     for ip in unique_ips:
         t_info = get_ip_threat_score(ip)
-        # Add the packet counts into the threat_map for node display
         t_info["total_packets"] = node_packet_counts.get(ip, 0)
         threat_map[ip] = t_info
 
@@ -578,10 +594,10 @@ async def api_ai_analyze(event_id: int):
     alert = next((a for a in alerts if a["id"] == event_id), None)
     if not alert:
         return JSONResponse({"error": "Alert not found"}, status_code=404)
-    
+
     explanation = expert_analyst.explain_alert(alert)
     actions = expert_analyst.get_response_actions(alert)
-    
+
     return JSONResponse({
         "ok": True,
         "analysis": explanation,
@@ -607,6 +623,7 @@ async def websocket_endpoint(ws: WebSocket):
             connected_clients.remove(ws)
         print(f"[WS] Client disconnected ({len(connected_clients)} total)")
 
+
 @app.websocket("/ws/traffic-intel")
 async def traffic_intel_websocket(ws: WebSocket):
     await ws.accept()
@@ -629,6 +646,7 @@ async def traffic_intel_websocket(ws: WebSocket):
 @app.on_event("startup")
 async def on_startup():
     global capture_thread
+
     # Initialize database
     init_db()
     print("[+] Database initialized")
@@ -639,8 +657,15 @@ async def on_startup():
     else:
         print("[WARN] MongoDB Atlas connection failed or not configured")
 
-    capture_thread = threading.Thread(target=capture_worker, daemon=True)
-    capture_thread.start()
+    # Disable packet capture on Render/cloud
+    render_env = os.getenv("RENDER", "").lower() == "true"
+
+    if not render_env:
+        capture_thread = threading.Thread(target=capture_worker, daemon=True)
+        capture_thread.start()
+        print("[+] Local packet capture started")
+    else:
+        print("[+] Render environment detected - packet capture disabled")
 
     if REDIRECT_HTTP_TO_HTTPS:
         # redir_thread = threading.Thread(target=http_redirection_worker, daemon=True)
@@ -657,11 +682,11 @@ async def on_startup():
 async def on_shutdown():
     global is_running
     is_running = False
-    
+
     # Ensure all buffered packets are flushed to DB
-    from database import packet_buffer
-    packet_buffer.stop()
-    
+    from database import packet_buffer as db_packet_buffer
+    db_packet_buffer.stop()
+
     if capture_proc and capture_proc.poll() is None:
         capture_proc.terminate()
     print("[+] Server shutdown and buffer flushed")

@@ -67,31 +67,11 @@ def log_event(event_type, message, details=None, severity="MEDIUM",
             mitre_tactic=mitre_tactic,
             src_ip=src_ip,
             dst_ip=dst_ip,
+            protocol=protocol,
+            port=port
         )
     except Exception as e:
         print(f"[ERROR] Failed to write to database: {e}")
-
-    # Also write to JSON for backward compat
-    try:
-        if os.path.exists(LOG_FILE):
-            with open(LOG_FILE, "r") as f:
-                try:
-                    logs = json.load(f)
-                    if not isinstance(logs, list):
-                        logs = []
-                except json.JSONDecodeError:
-                    logs = []
-        else:
-            logs = []
-
-        logs.append(event)
-        if len(logs) > 500:
-            logs = logs[-500:]
-
-        with open(LOG_FILE, "w") as f:
-            json.dump(logs, f, indent=2, default=str)
-    except Exception as e:
-        print(f"[ERROR] Failed to write JSON log: {e}")
 
     # Rate-limited email for HIGH and CRITICAL alerts
     if severity in ("HIGH", "CRITICAL") and event_type != "ERROR":

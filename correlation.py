@@ -4,6 +4,7 @@ Correlation Engine — Links related security events into kill-chain incidents.
 import time
 from collections import defaultdict
 from database import create_incident
+from config import MITRE_MAP
 
 # -------------------------
 # Correlation State
@@ -154,12 +155,26 @@ def get_ip_threat_score(ip: str) -> dict:
     else:
         level = "low"
 
+    # Find the most serious MITRE info from the recent events
+    mitre_id = ""
+    mitre_tactic = ""
+    attack_types = list(set(e[1] for e in recent))
+    
+    # Priority based on severity
+    best_event = max(recent, key=lambda x: severity_weights.get(x[3], 0)) if recent else None
+    if best_event:
+        m_info = MITRE_MAP.get(best_event[1], {})
+        mitre_id = m_info.get("id", "")
+        mitre_tactic = m_info.get("tactic", "")
+
     return {
         "ip": ip,
         "score": score,
         "level": level,
         "event_count": len(recent),
-        "attack_types": list(set(e[1] for e in recent)),
+        "attack_types": attack_types,
+        "mitre_id": mitre_id,
+        "mitre_tactic": mitre_tactic
     }
 
 

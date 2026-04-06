@@ -32,6 +32,8 @@ from database import (
 from threat_intel import get_ip_summary, check_ip_reputation
 from correlation import get_all_threat_scores, get_ip_threat_score
 from ai_analyst import expert_analyst
+from mongodb_storage import atlas_client
+from traffic_intel_engine import engine as traffic_engine
 
 app = FastAPI(title="SOC SIEM Dashboard")
 
@@ -43,6 +45,7 @@ capture_thread = None
 is_running = False
 start_time = time.time()
 connected_clients: list[WebSocket] = []
+intel_clients: list[WebSocket] = [] # Dedicated clients for traffic intel view
 packet_buffer: list[dict] = []
 buffer_lock = threading.Lock()
 
@@ -85,15 +88,34 @@ def get_system_metrics():
         "net_total_recv_mb": round(curr_net_io.bytes_recv / (1024**2), 2),
         "uptime_seconds": int(time.time() - start_time),
         "thread_count": psutil.Process().num_threads(),
+        "mongodb_connected": atlas_client._connected,
     }
 
+
+# -------------------------
+# Utilities
+# -------------------------
+def is_internal_ip(ip):
+    """Check if an IP address is internal (RFC1918) or localhost."""
+    if not ip or ip == "Unknown": return False
+    parts = ip.split('.')
+    if len(parts) != 4: return False
+    
+    p1 = int(parts[0])
+    p2 = int(parts[1])
+    
+    if p1 == 10: return True
+    if p1 == 172 and (16 <= p2 <= 31): return True
+    if p1 == 192 and p2 == 168: return True
+    if p1 == 127: return True
+    return False
 
 # -------------------------
 # Capture Thread
 # -------------------------
 def capture_worker():
     global capture_proc, is_running
-    print("[+] Starting TShark capture...")
+    print("[+] Starting TShark capture (Enhanced)...")
     capture_proc = start_capture()
     is_running = True
 
@@ -107,47 +129,89 @@ def capture_worker():
                 continue
 
             fields = line.split("|")
-            # Now expecting 12 fields (indices 0-11)
-            if len(fields) < 12:
-                fields += [""] * (12 - len(fields))
+            # Now expecting 15 fields (indices 0-14)
+            if len(fields) < 15:
+                fields += [""] * (15 - len(fields))
 
             src = fields[0]
             dst = fields[1]
             proto = fields[2]
 
-            if proto == "6":
-                src_port, dst_port, proto_name = fields[3], fields[4], "TCP"
-            elif proto == "17":
-                src_port, dst_port, proto_name = fields[5], fields[6], "UDP"
-            else:
-                src_port, dst_port, proto_name = "", "", f"PROTO-{proto}"
+            # Port extraction logic
+            src_port = ""
+            dst_port = ""
+            proto_name = f"PROTO-{proto}"
 
-            length = fields[7]
+            if proto == "6": # TCP
+                src_port, dst_port, proto_name = fields[3], fields[4], "TCP"
+            elif proto == "17": # UDP
+                src_port, dst_port, proto_name = fields[5], fields[6], "UDP"
+            elif proto == "1": # ICMP
+                proto_name = "ICMP"
+            
+            length = int(fields[7]) if fields[7].isdigit() else 0
             flags = fields[8]
+            
+            # DNS details (9, 10)
             dns_query = fields[9]
-            http_host = fields[10]
-            tls_sni = fields[11]
+            dns_type = fields[10]
+            if dns_query: proto_name = "DNS"
+
+            # HTTP details (11, 12)
+            http_host = fields[11]
+            http_method = fields[12]
+            if http_host or http_method: proto_name = "HTTP"
+
+            # TLS SNI (13)
+            tls_sni = fields[13]
+
+            # ICMP Type (14)
+            icmp_type = fields[14]
 
             cleanup_old_data()
 
+            # --- Classification & Intelligence ---
+            src_type = "INT" if is_internal_ip(src) else "EXT"
+            dst_type = "INT" if is_internal_ip(dst) else "EXT"
+
             packet_data = {
                 "src_ip": src,
+                "src_type": src_type,
                 "dst_ip": dst,
+                "dst_type": dst_type,
                 "protocol": proto_name,
                 "src_port": src_port,
                 "dst_port": dst_port,
-                "length": int(length) if length.isdigit() else 0,
+                "length": length,
                 "flags": flags,
                 "dns_query": dns_query,
+                "dns_type": dns_type,
                 "http_host": http_host,
+                "http_method": http_method,
                 "tls_sni": tls_sni,
+                "icmp_type": icmp_type,
             }
 
+            # --- Live Threat Layer ---
             is_threat, threat_msg = analyze_packet_header(packet_data)
+            
+            # Additional realtime checks for "Network Monitor" view
+            security_status = "SAFE"
+            if is_threat:
+                security_status = "THREAT"
+            elif dst_port in ["22", "3389", "4444", "445"]:
+                security_status = "SUSPICIOUS"
+                threat_msg = f"Suspicious port access: {dst_port}"
+            elif length > 10000: # Simple large packet anomaly
+                security_status = "SUSPICIOUS"
+                threat_msg = "Large packet anomaly detected"
+
             packet_data["is_threat"] = is_threat
             packet_data["threat_msg"] = threat_msg if is_threat else ""
+            packet_data["security_status"] = security_status
 
             log_packet(packet_data)
+            traffic_engine.process_packet(packet_data)
 
             with buffer_lock:
                 packet_data["id"] = int(time.time() * 1000000) # Microsecond ID
@@ -233,6 +297,28 @@ async def broadcast_loop():
         for ws in disconnected:
             if ws in connected_clients:
                 connected_clients.remove(ws)
+
+async def traffic_intel_broadcast_loop():
+    """Send aggregated traffic intelligence metrics to all /ws/traffic-intel clients."""
+    while True:
+        await asyncio.sleep(1.5)
+
+        if not intel_clients:
+            continue
+
+        metrics = traffic_engine.get_aggregated_metrics()
+        msg = json.dumps({"type": "traffic_intel", "metrics": metrics}, default=str)
+
+        disconnected = []
+        for ws in intel_clients:
+            try:
+                await ws.send_text(msg)
+            except:
+                disconnected.append(ws)
+
+        for ws in disconnected:
+            if ws in intel_clients:
+                intel_clients.remove(ws)
 
 
 # -------------------------
@@ -416,14 +502,22 @@ async def api_topology():
     enriched = []
     
     unique_ips = set()
+    node_packet_counts = {} # ip -> count
+    
     for entry in topo:
-        unique_ips.add(entry["src_ip"])
-        unique_ips.add(entry["dst_ip"])
+        s_ip, d_ip, w = entry["src_ip"], entry["dst_ip"], entry["weight"]
+        unique_ips.add(s_ip)
+        unique_ips.add(d_ip)
+        node_packet_counts[s_ip] = node_packet_counts.get(s_ip, 0) + w
+        node_packet_counts[d_ip] = node_packet_counts.get(d_ip, 0) + w
 
     # Get threat levels for all IPs involved
     threat_map = {}
     for ip in unique_ips:
-        threat_map[ip] = get_ip_threat_score(ip)
+        t_info = get_ip_threat_score(ip)
+        # Add the packet counts into the threat_map for node display
+        t_info["total_packets"] = node_packet_counts.get(ip, 0)
+        threat_map[ip] = t_info
 
     for entry in topo:
         e = dict(entry)
@@ -513,6 +607,21 @@ async def websocket_endpoint(ws: WebSocket):
             connected_clients.remove(ws)
         print(f"[WS] Client disconnected ({len(connected_clients)} total)")
 
+@app.websocket("/ws/traffic-intel")
+async def traffic_intel_websocket(ws: WebSocket):
+    await ws.accept()
+    intel_clients.append(ws)
+    print(f"[WS-INTEL] Client connected ({len(intel_clients)} total)")
+    try:
+        while True:
+            await ws.receive_text()
+    except WebSocketDisconnect:
+        pass
+    finally:
+        if ws in intel_clients:
+            intel_clients.remove(ws)
+        print(f"[WS-INTEL] Client disconnected ({len(intel_clients)} total)")
+
 
 # -------------------------
 # Lifecycle
@@ -524,6 +633,12 @@ async def on_startup():
     init_db()
     print("[+] Database initialized")
 
+    # Initialize MongoDB Atlas connection
+    if atlas_client.connect():
+        print("[+] MongoDB Atlas connected and ready")
+    else:
+        print("[WARN] MongoDB Atlas connection failed or not configured")
+
     capture_thread = threading.Thread(target=capture_worker, daemon=True)
     capture_thread.start()
 
@@ -533,6 +648,7 @@ async def on_startup():
         pass
 
     asyncio.create_task(broadcast_loop())
+    asyncio.create_task(traffic_intel_broadcast_loop())
     asyncio.create_task(risk_maintenance_loop())
     print(f"[+] SIEM Dashboard running at http://localhost:{SERVER_PORT}")
 
@@ -541,9 +657,14 @@ async def on_startup():
 async def on_shutdown():
     global is_running
     is_running = False
+    
+    # Ensure all buffered packets are flushed to DB
+    from database import packet_buffer
+    packet_buffer.stop()
+    
     if capture_proc and capture_proc.poll() is None:
         capture_proc.terminate()
-    print("[+] Server shutdown")
+    print("[+] Server shutdown and buffer flushed")
 
 
 if __name__ == "__main__":

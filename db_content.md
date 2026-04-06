@@ -1,12 +1,54 @@
 # Database Content Overview
 
 ## Tables
-- events
+- security_logs
 - sqlite_sequence
+- events
 - packets
 - incidents
 - risk_history
-- security_logs
+- security_events
+- raw_packets
+
+## Table: security_logs
+### Schema
+| Column | Type |
+| --- | --- |
+| id | INTEGER |
+| timestamp | REAL |
+| src_ip | TEXT |
+| dst_ip | TEXT |
+| protocol | TEXT |
+| port | TEXT |
+| alert_type | TEXT |
+| severity | TEXT |
+| description | TEXT |
+| details | TEXT |
+
+### Sample Data (Last 5 records)
+| id | timestamp | src_ip | dst_ip | protocol | port | alert_type | severity | description | details |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 25 | 1775124637.8481286 | 20.72.205.209 | 10.71.149.209 |  |  | RATE_LIMIT | HIGH | High packet rate from 20.72.205.209 → 10.71.149.209 (500 pkts/10s) | {"src_ip": "20.72.205.209", "dst_ip": "10.71.149.209", "count": 500, "enrichment": {"risk_score":... |
+| 24 | 1775124139.9284146 | 10.71.149.24 |  |  |  | PORT_SCAN | MEDIUM | Port Scan detected from 10.71.149.24 (15 unique ports probed) | {"src_ip": "10.71.149.24", "ports_scanned": 15, "enrichment": {"risk_score": 45.17, "confidence":... |
+| 23 | 1775124132.7239895 | 10.71.149.209 |  |  |  | DNS_TUNNEL | HIGH | Possible DNS Tunneling from 10.71.149.209 (avg payload 84B, 15 queries) | {"src_ip": "10.71.149.209", "avg_size": 84.06666666666666, "query_count": 15, "enrichment": {"ris... |
+| 22 | 1775124124.405183 | 10.71.149.209 | 216.239.32.223 |  |  | RATE_LIMIT | HIGH | High packet rate from 10.71.149.209 → 216.239.32.223 (500 pkts/10s) | {"src_ip": "10.71.149.209", "dst_ip": "216.239.32.223", "count": 500, "enrichment": {"risk_score"... |
+| 21 | 1775123573.4584112 | 10.71.149.24 |  |  |  | PORT_SCAN | MEDIUM | Port Scan detected from 10.71.149.24 (15 unique ports probed) | {"src_ip": "10.71.149.24", "ports_scanned": 15, "enrichment": {"risk_score": 7.65, "confidence": ... |
+
+## Table: sqlite_sequence
+### Schema
+| Column | Type |
+| --- | --- |
+| name |  |
+| seq |  |
+
+### Sample Data (Last 5 records)
+| name | seq |
+| --- | --- |
+| raw_packets | 5300 |
+| incidents | 6 |
+| security_logs | 25 |
+| events | 25 |
+| risk_history | 523 |
 
 ## Table: events
 ### Schema
@@ -29,27 +71,11 @@
 ### Sample Data (Last 5 records)
 | id | timestamp | timestamp_str | event_type | severity | message | details | mitre_id | mitre_tactic | confidence | src_ip | dst_ip | acknowledged |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1160 | 1773379812.1034515 | 2026-03-13 11:00:12 | RATE_LIMIT | HIGH | High packet rate from 10.147.42.143 → 10.147.42.209 (20 pkts/60s) | {"src_ip": "10.147.42.143", "dst_ip": "10.147.42.209", "count": 20, "enrichment": {"risk_score": ... | T1498 | Impact | 0.8 | 10.147.42.143 | 10.147.42.209 | 0 |
-| 1159 | 1773379681.1978858 | 2026-03-13 10:58:01 | RATE_LIMIT | HIGH | High packet rate from 0.0.0.0 → 255.255.255.255 (20 pkts/60s) | {"src_ip": "0.0.0.0", "dst_ip": "255.255.255.255", "count": 20, "enrichment": {"risk_score": 7.95... | T1498 | Impact | 0.8 | 0.0.0.0 | 255.255.255.255 | 0 |
-| 1158 | 1773379669.1170974 | 2026-03-13 10:57:49 | RATE_LIMIT | HIGH | High packet rate from 10.149.119.209 → 10.149.119.255 (20 pkts/60s) | {"src_ip": "10.149.119.209", "dst_ip": "10.149.119.255", "count": 20, "enrichment": {"risk_score"... | T1498 | Impact | 0.8 | 10.149.119.209 | 10.149.119.255 | 0 |
-| 1157 | 1773378864.494883 | 2026-03-13 10:44:24 | PORT_SCAN | MEDIUM | Port Scan detected from 10.147.42.209 (5 unique ports probed) | {"src_ip": "10.147.42.209", "ports_scanned": 5, "enrichment": {"risk_score": 7.8, "confidence": 8... | T1046 | Discovery | 0.8 | 10.147.42.209 |  | 0 |
-| 1156 | 1773378828.0419426 | 2026-03-13 10:43:48 | PORT_SCAN | MEDIUM | Port Scan detected from 10.147.42.143 (5 unique ports probed) | {"src_ip": "10.147.42.143", "ports_scanned": 5, "enrichment": {"risk_score": 11.83, "confidence":... | T1046 | Discovery | 0.8 | 10.147.42.143 |  | 0 |
-
-## Table: sqlite_sequence
-### Schema
-| Column | Type |
-| --- | --- |
-| name |  |
-| seq |  |
-
-### Sample Data (Last 5 records)
-| name | seq |
-| --- | --- |
-| security_logs | 1160 |
-| risk_history | 784 |
-| incidents | 296 |
-| events | 1160 |
-| packets | 2296908 |
+| 25 | 1775124637.8481286 | 2026-04-02 15:40:37 | RATE_LIMIT | HIGH | High packet rate from 20.72.205.209 → 10.71.149.209 (500 pkts/10s) | {"src_ip": "20.72.205.209", "dst_ip": "10.71.149.209", "count": 500, "enrichment": {"risk_score":... | T1498 | Impact | 0.8 | 20.72.205.209 | 10.71.149.209 | 0 |
+| 24 | 1775124139.9284146 | 2026-04-02 15:32:19 | PORT_SCAN | MEDIUM | Port Scan detected from 10.71.149.24 (15 unique ports probed) | {"src_ip": "10.71.149.24", "ports_scanned": 15, "enrichment": {"risk_score": 45.17, "confidence":... | T1046 | Discovery | 0.8 | 10.71.149.24 |  | 0 |
+| 23 | 1775124132.7239895 | 2026-04-02 15:32:12 | DNS_TUNNEL | HIGH | Possible DNS Tunneling from 10.71.149.209 (avg payload 84B, 15 queries) | {"src_ip": "10.71.149.209", "avg_size": 84.06666666666666, "query_count": 15, "enrichment": {"ris... | T1071.004 | Command and Control | 0.8 | 10.71.149.209 |  | 0 |
+| 22 | 1775124124.405183 | 2026-04-02 15:32:04 | RATE_LIMIT | HIGH | High packet rate from 10.71.149.209 → 216.239.32.223 (500 pkts/10s) | {"src_ip": "10.71.149.209", "dst_ip": "216.239.32.223", "count": 500, "enrichment": {"risk_score"... | T1498 | Impact | 0.8 | 10.71.149.209 | 216.239.32.223 | 0 |
+| 21 | 1775123573.4584112 | 2026-04-02 15:22:53 | PORT_SCAN | MEDIUM | Port Scan detected from 10.71.149.24 (15 unique ports probed) | {"src_ip": "10.71.149.24", "ports_scanned": 15, "enrichment": {"risk_score": 7.65, "confidence": ... | T1046 | Discovery | 0.8 | 10.71.149.24 |  | 0 |
 
 ## Table: packets
 ### Schema
@@ -73,11 +99,11 @@
 ### Sample Data (Last 5 records)
 | id | timestamp | src_ip | dst_ip | protocol | src_port | dst_port | length | flags | is_threat | threat_msg | dns_query | http_host | tls_sni |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 2296908 | 1773379848.434977 |  |  | PROTO- |  |  | 74 | 0x0010 | 1 | Missing IP addresses |  |  |  |
-| 2296907 | 1773379848.4346588 |  |  | PROTO- |  |  | 74 | 0x0010 | 1 | Missing IP addresses |  |  |  |
-| 2296906 | 1773379848.4343455 |  |  | PROTO- |  |  | 74 | 0x0010 | 1 | Missing IP addresses |  |  |  |
-| 2296905 | 1773379848.4340289 |  |  | PROTO- |  |  | 74 | 0x0010 | 1 | Missing IP addresses |  |  |  |
-| 2296904 | 1773379848.433701 |  |  | PROTO- |  |  | 74 | 0x0010 | 1 | Missing IP addresses |  |  |  |
+| 454153 | 1775124828.6259217 |  |  | PROTO- |  |  | 74 | 0x0010 | 1 | Missing IP addresses |  |  |  |
+| 454152 | 1775124828.624615 |  |  | PROTO- |  |  | 1329 | 0x0010 | 1 | Missing IP addresses |  |  |  |
+| 454151 | 1775124828.6233544 |  |  | PROTO- |  |  | 1329 | 0x0010 | 1 | Missing IP addresses |  |  |  |
+| 454150 | 1775124828.622057 |  |  | PROTO- |  |  | 86 | 0x0010 | 1 | Missing IP addresses |  |  |  |
+| 454149 | 1775124828.6207201 |  |  | PROTO- |  |  | 148 | 0x0018 | 1 | Missing IP addresses |  |  |  |
 
 ## Table: incidents
 ### Schema
@@ -98,11 +124,11 @@
 ### Sample Data (Last 5 records)
 | id | created_at | updated_at | title | severity | status | assigned_to | event_ids | notes | src_ip | kill_chain_phase |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 296 | 1773379812.1413488 | 1773379812.1413488 | Multi-Stage Attack from 10.147.42.143: Reconnaissance → Impact | CRITICAL | OPEN |  | [1156, 1160] | [] | 10.147.42.143 | Reconnaissance → Impact |
-| 295 | 1773378864.5461261 | 1773378864.5461261 | Multi-Stage Attack from 10.147.42.209: Reconnaissance → Impact | CRITICAL | OPEN |  | [1155, 1157] | [] | 10.147.42.209 | Reconnaissance → Impact |
-| 294 | 1773334855.950776 | 1773334873.987398 | [CRITICAL] DATA_EXFIL — 74.224.107.140 | CRITICAL | RESOLVED |  | [1152] | [{"timestamp": "2026-03-12 22:31:13", "text": "Status changed to RESOLVED"}] | 74.224.107.140 | Exfiltration |
-| 293 | 1773334767.0018878 | 1773334884.2226589 | Multi-Stage Attack from 74.224.107.140: Actions on Objectives → Impact | CRITICAL | INVESTIGATING |  | [1151, 1152] | [{"timestamp": "2026-03-12 22:31:24", "text": "Status changed to INVESTIGATING"}] | 74.224.107.140 | Actions on Objectives → Impact |
-| 292 | 1773334746.4839368 | 1773334746.4839368 | Multi-Stage Attack from 10.196.44.209: Reconnaissance → Impact | CRITICAL | OPEN |  | [1148, 1150] | [] | 10.196.44.209 | Reconnaissance → Impact |
+| 6 | 1775124137.8364375 | 1775124137.8364375 | Multi-Stage Attack from 10.71.149.209: Command & Control → Impact | CRITICAL | OPEN |  | [22, 23] | [] | 10.71.149.209 | Command & Control → Impact |
+| 5 | 1775123573.4118767 | 1775123573.4118767 | Multi-Stage Attack from 10.71.149.209: Command & Control → Impact | CRITICAL | OPEN |  | [19, 20] | [] | 10.71.149.209 | Command & Control → Impact |
+| 4 | 1774695173.4950364 | 1774695173.4950364 | Multi-Stage Attack from 172.18.195.209: Command & Control → Impact | CRITICAL | OPEN |  | [12, 14, 17] | [] | 172.18.195.209 | Command & Control → Impact |
+| 3 | 1774694987.7977283 | 1774694987.7977283 | Multi-Stage Attack from 172.18.195.209: Command & Control → Impact | CRITICAL | OPEN |  | [12, 14] | [] | 172.18.195.209 | Command & Control → Impact |
+| 2 | 1774010108.0026848 | 1774010108.0026848 | Multi-Stage Attack from 10.147.42.209: Command & Control → Impact | CRITICAL | OPEN |  | [1, 4, 5] | [] | 10.147.42.209 | Command & Control → Impact |
 
 ## Table: risk_history
 ### Schema
@@ -115,13 +141,13 @@
 ### Sample Data (Last 5 records)
 | id | timestamp | risk_score |
 | --- | --- | --- |
-| 784 | 1773379844.834668 | 5.893061502126948 |
-| 783 | 1773379834.8315272 | 6.203222633817841 |
-| 782 | 1773379824.8253918 | 6.529708035597728 |
-| 781 | 1773379814.8168545 | 6.873376879576556 |
-| 780 | 1773379804.8160343 | 3.393047939212867 |
+| 523 | 1775124846.7337294 | 0.0 |
+| 522 | 1775124826.4534242 | 3.2694950970327428 |
+| 521 | 1775124816.4169376 | 3.4415737863502556 |
+| 520 | 1775124806.3985171 | 3.622709248789743 |
+| 519 | 1775124796.3937416 | 3.8133781566207823 |
 
-## Table: security_logs
+## Table: security_events
 ### Schema
 | Column | Type |
 | --- | --- |
@@ -130,17 +156,43 @@
 | src_ip | TEXT |
 | dst_ip | TEXT |
 | protocol | TEXT |
-| port | TEXT |
+| src_port | INTEGER |
+| dst_port | INTEGER |
 | alert_type | TEXT |
 | severity | TEXT |
-| description | TEXT |
+| message | TEXT |
 | details | TEXT |
+| mitre_id | TEXT |
+| mitre_tactic | TEXT |
+| log_hash | TEXT |
 
 ### Sample Data (Last 5 records)
-| id | timestamp | src_ip | dst_ip | protocol | port | alert_type | severity | description | details |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1160 | 1773379812.1034515 | 10.147.42.143 | 10.147.42.209 |  |  | RATE_LIMIT | HIGH | High packet rate from 10.147.42.143 → 10.147.42.209 (20 pkts/60s) | {"src_ip": "10.147.42.143", "dst_ip": "10.147.42.209", "count": 20, "enrichment": {"risk_score": ... |
-| 1159 | 1773379681.1978858 | 0.0.0.0 | 255.255.255.255 |  |  | RATE_LIMIT | HIGH | High packet rate from 0.0.0.0 → 255.255.255.255 (20 pkts/60s) | {"src_ip": "0.0.0.0", "dst_ip": "255.255.255.255", "count": 20, "enrichment": {"risk_score": 7.95... |
-| 1158 | 1773379669.1170974 | 10.149.119.209 | 10.149.119.255 |  |  | RATE_LIMIT | HIGH | High packet rate from 10.149.119.209 → 10.149.119.255 (20 pkts/60s) | {"src_ip": "10.149.119.209", "dst_ip": "10.149.119.255", "count": 20, "enrichment": {"risk_score"... |
-| 1157 | 1773378864.494883 | 10.147.42.209 |  |  |  | PORT_SCAN | MEDIUM | Port Scan detected from 10.147.42.209 (5 unique ports probed) | {"src_ip": "10.147.42.209", "ports_scanned": 5, "enrichment": {"risk_score": 7.8, "confidence": 8... |
-| 1156 | 1773378828.0419426 | 10.147.42.143 |  |  |  | PORT_SCAN | MEDIUM | Port Scan detected from 10.147.42.143 (5 unique ports probed) | {"src_ip": "10.147.42.143", "ports_scanned": 5, "enrichment": {"risk_score": 11.83, "confidence":... |
+*No data found in this table.*
+
+## Table: raw_packets
+### Schema
+| Column | Type |
+| --- | --- |
+| id | INTEGER |
+| timestamp | REAL |
+| src_ip | TEXT |
+| dst_ip | TEXT |
+| protocol | TEXT |
+| src_port | TEXT |
+| dst_port | TEXT |
+| length | INTEGER |
+| flags | TEXT |
+| is_threat | INTEGER |
+| threat_msg | TEXT |
+| dns_query | TEXT |
+| http_host | TEXT |
+| tls_sni | TEXT |
+
+### Sample Data (Last 5 records)
+| id | timestamp | src_ip | dst_ip | protocol | src_port | dst_port | length | flags | is_threat | threat_msg | dns_query | http_host | tls_sni |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 5300 | 1775124852.4218493 |  |  | PROTO- |  |  | 816 |  | 1 | Missing IP addresses |  |  |  |
+| 5299 | 1775124852.4218478 |  |  | PROTO- |  |  | 1292 |  | 1 | Missing IP addresses |  |  |  |
+| 5298 | 1775124852.4218466 |  |  | PROTO- |  |  | 1292 |  | 1 | Missing IP addresses |  |  |  |
+| 5297 | 1775124852.421845 |  |  | PROTO- |  |  | 1329 | 0x0010 | 1 | Missing IP addresses |  |  |  |
+| 5296 | 1775124852.4218435 |  |  | PROTO- |  |  | 1329 | 0x0010 | 1 | Missing IP addresses |  |  |  |

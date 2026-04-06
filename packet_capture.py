@@ -29,14 +29,19 @@ def start_capture():
         "-e", "tcp.flags",
 
         # Enhanced fields for deeper analysis
-        # DNS query name (index 9)
+        # DNS (indices 9, 10)
         "-e", "dns.qry.name",
+        "-e", "dns.qry.type",
 
-        # HTTP host (index 10)
+        # HTTP (indices 11, 12)
         "-e", "http.host",
+        "-e", "http.request.method",
 
-        # TLS SNI / Server Name (index 11)
+        # TLS SNI / Server Name (index 13)
         "-e", "tls.handshake.extensions_server_name",
+
+        # ICMP (index 14)
+        "-e", "icmp.type",
 
         "-E", "separator=|",
         "-l"

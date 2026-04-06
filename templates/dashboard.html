@@ -599,23 +599,49 @@
       transition: width 0.6s;
     }
 
-    /* --- Custom Scrollbar --- */
-    ::-webkit-scrollbar {
-      width: 6px;
+    /* --- Animations --- */
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
+    .row-new { animation: fadeInDown 0.4s ease-out forwards; }
 
-    ::-webkit-scrollbar-track {
-      background: transparent;
+    @keyframes threatBlink {
+      0% { background: rgba(239, 68, 68, 0.1); }
+      50% { background: rgba(239, 68, 68, 0.3); }
+      100% { background: rgba(239, 68, 68, 0.1); }
     }
+    .status-threat-blink { animation: threatBlink 1s infinite; }
 
-    ::-webkit-scrollbar-thumb {
-      background: #334155;
-      border-radius: 10px;
+    /* --- Protocol Badges --- */
+    .badge-proto {
+      padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; font-family: 'Inter', sans-serif;
+      text-transform: uppercase; letter-spacing: 0.5px;
     }
+    .proto-tcp { background: rgba(6, 182, 212, 0.1); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.2); }
+    .proto-udp { background: rgba(139, 92, 246, 0.1); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.2); }
+    .proto-icmp { background: rgba(251, 191, 36, 0.1); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.2); }
+    .proto-dns { background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2); }
+    .proto-http { background: rgba(236, 72, 153, 0.1); color: #f472b6; border: 1px solid rgba(236, 72, 153, 0.2); }
+    .proto-other { background: rgba(148, 163, 184, 0.1); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.2); }
 
-    ::-webkit-scrollbar-thumb:hover {
-      background: #475569;
+    .badge-ip {
+      font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 4px; margin-left: 6px;
+      vertical-align: middle;
     }
+    .ip-int { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; }
+    .ip-ext { background: rgba(37, 99, 235, 0.2); color: #93c5fd; }
+
+    /* --- Traffic Intel Variance Bar --- */
+    .variance-container {
+      width: 100%; height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden;
+      position: relative; margin-top: 4px;
+    }
+    .variance-fill {
+      height: 100%; background: linear-gradient(90deg, var(--accent), var(--purple));
+      transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .variance-text { font-size: 9px; opacity: 0.7; font-family: 'JetBrains Mono'; margin-top: 2px; display: block; }
 
     .topology-canvas {
       background: #020617;
@@ -624,6 +650,43 @@
       height: 600px;
       border: 1px solid var(--border);
     }
+
+    /* --- New Topology UI Components --- */
+    .topo-legend {
+      position: absolute; bottom: 20px; left: 20px;
+      background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px);
+      padding: 12px 18px; border-radius: 12px; border: 1px solid var(--border);
+      display: flex; gap: 20px; z-index: 20; color: var(--text-dim); font-size: 11px; font-weight: 700;
+      pointer-events: auto;
+    }
+    .legend-item { display: flex; align-items: center; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+    .dot.safe { background: var(--accent); }
+    .dot.suspicious { background: var(--orange); }
+    .dot.threat { background: var(--red); box-shadow: 0 0 10px var(--red); }
+    .dot.local { background: var(--purple); }
+
+    .topo-intel-panel {
+      position: absolute; top: 20px; right: 20px;
+      width: 300px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px);
+      border-radius: 20px; border: 1px solid var(--border); z-index: 50;
+      box-shadow: 0 15px 45px rgba(0,0,0,0.5); display: none; overflow: hidden;
+      animation: slidePanel 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .panel-header { padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); }
+    .panel-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); }
+    .panel-close { background: none; border: none; color: var(--text-dim); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: color 0.2s; }
+    .panel-close:hover { color: #fff; }
+    .panel-content { padding: 24px; }
+    
+    @keyframes slidePanel { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+
+    @keyframes pulse-threat {
+      0% { r: 9; stroke-opacity: 1; stroke-width: 2px; }
+      50% { r: 15; stroke-opacity: 0.2; stroke-width: 10px; }
+      100% { r: 9; stroke-opacity: 1; stroke-width: 2px; }
+    }
+    .topo-node.pulse-active { animation: pulse-threat 2s infinite; stroke-width: 3px !important; }
 
     .mitre-matrix {
       display: flex;
@@ -1221,6 +1284,22 @@
         <div class="chart-box" style="margin-bottom: 24px;">
           <div class="chart-header">
             <div class="chart-title"><i data-lucide="monitor-dot"></i> Live Packet Telemetry</div>
+            <div class="top-meta" style="margin-left: auto;">
+              <div style="display: flex; gap: 20px;">
+                <div class="stat-mini">
+                  <span style="font-size: 10px; opacity: 0.6; display: block;">PPS</span>
+                  <span id="monPps" style="font-family: 'JetBrains Mono'; color: var(--accent);">0.0</span>
+                </div>
+                <div class="stat-mini">
+                  <span style="font-size: 10px; opacity: 0.6; display: block;">ACTIVE FLOWS</span>
+                  <span id="monFlows" style="font-family: 'JetBrains Mono'; color: var(--purple);">0</span>
+                </div>
+                <div class="stat-mini">
+                  <span style="font-size: 10px; opacity: 0.6; display: block;">THREATS</span>
+                  <span id="monThreats" style="font-family: 'JetBrains Mono'; color: var(--red);">0</span>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="table-wrap">
             <table class="pro-table" id="packetTable">
@@ -1252,9 +1331,13 @@
               <thead>
                 <tr>
                   <th>Protocol</th>
-                  <th>Packet Count</th>
-                  <th>Avg. Byte Size</th>
-                  <th>Unique Destination Varience</th>
+                  <th>Packets</th>
+                  <th>Avg. Size</th>
+                  <th>PPS</th>
+                  <th>Traffic Type</th>
+                  <th>Entropy</th>
+                  <th>Threat Level</th>
+                  <th>Variance Source/Dest</th>
                 </tr>
               </thead>
               <tbody id="protocolMetricsBody"></tbody>
@@ -1272,6 +1355,25 @@
           </div>
           <div id="topoContainer">
             <div id="topoTooltip" class="topo-tooltip"></div>
+            
+            <!-- Legend Overlay -->
+            <div id="topoLegend" class="topo-legend">
+              <div class="legend-item"><span class="dot safe"></span> Safe</div>
+              <div class="legend-item"><span class="dot suspicious"></span> Suspicious</div>
+              <div class="legend-item"><span class="dot threat"></span> Threat</div>
+              <div class="legend-item"><span class="dot local"></span> Local Hub</div>
+            </div>
+
+            <!-- Intelligence Panel -->
+            <div id="topoIntelPanel" class="topo-intel-panel">
+              <div class="panel-header">
+                <div class="panel-title">Asset Intelligence</div>
+                <button class="panel-close" onclick="closeIntelPanel()"><i data-lucide="x"></i></button>
+              </div>
+              <div id="intelContent" class="panel-content">
+                <!-- Dynamic Intelligence Content -->
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1366,7 +1468,7 @@
               <div style="display:flex; justify-content:space-between"><span style="color:var(--text-dim)">Kernel
                   Status</span> <span style="color:var(--green)">Certified Green</span></div>
               <div style="display:flex; justify-content:space-between"><span style="color:var(--text-dim)">DB
-                  Connection</span> <span style="color:var(--accent)">SQLite Local</span></div>
+                  Connection</span> <span id="dbStatus" style="color:var(--accent)">SQLite Local</span></div>
             </div>
           </div>
         </div>
@@ -1391,6 +1493,11 @@
       event.currentTarget.classList.add('active');
       document.getElementById('view-title').textContent = event.currentTarget.textContent.trim();
       
+      // Initialize Traffic Intel WebSocket if switching to traffic view
+      if (viewId === 'traffic') {
+        initTrafficIntelWs();
+      }
+
       // Close sidebar on mobile after selection
       if (window.innerWidth <= 1024) {
         document.getElementById('sidebar').classList.remove('open');
@@ -1578,6 +1685,11 @@
         uptimeSynced = true;
       }
 
+      if (sys.mongodb_connected !== undefined) {
+        document.getElementById('dbStatus').textContent = sys.mongodb_connected ? 'MongoDB Atlas (Online)' : 'SQLite Local (Offline)';
+        document.getElementById('dbStatus').style.color = sys.mongodb_connected ? 'var(--green)' : 'var(--accent)';
+      }
+
       if (d.packets) renderPackets(d.packets);
 
       if (d.network_risk !== undefined) updateRiskGauge(d.network_risk);
@@ -1677,26 +1789,129 @@
 
 
 
+    let packetCount = 0;
+    const MAX_PACKETS = 100;
+    let monitoredThreats = 0;
+
     function renderPackets(packets) {
-      window.lastPackets = packets; // Store for investigation lookup
+      if (!window.lastPackets) window.lastPackets = [];
+      
       const tbody = document.getElementById('packetBody');
       if (!tbody) return;
 
-      tbody.innerHTML = packets.map(p => {
+      // Update Top Metrics if in view
+      document.getElementById('monPps').textContent = (document.getElementById('pps').textContent || "0.0");
+      document.getElementById('monFlows').textContent = topoLinks.length;
+      
+      // Process new packets
+      packets.forEach(p => {
+        // Avoid duplicate rendering if the list is sent again (though server sends chunks)
+        // For a true "prepender", we ideally only send *new* packets from the server.
+        // But server currently sends packets[-50:]. Let's handle it by checking IDs.
+        if (window.lastPackets.some(existing => existing.id === p.id)) return;
+        
+        window.lastPackets.unshift(p);
+        if (window.lastPackets.length > MAX_PACKETS) window.lastPackets.pop();
+
+        if (p.is_threat || p.security_status === 'SUSPICIOUS') monitoredThreats++;
+        document.getElementById('monThreats').textContent = monitoredThreats;
+
         const portStr = (p.src_port || p.dst_port) ? `${p.src_port || '?'}:${p.dst_port || '?'}` : '---';
+        const protoClass = `proto-${(p.protocol || 'other').toLowerCase()}`;
+        const srcBadge = `<span class="badge-ip ${p.src_type === 'INT' ? 'ip-int' : 'ip-ext'}">${p.src_type}</span>`;
+        const dstBadge = `<span class="badge-ip ${p.dst_type === 'INT' ? 'ip-int' : 'ip-ext'}">${p.dst_type}</span>`;
+        
+        const row = document.createElement('tr');
+        row.className = `hover-row row-new ${p.security_status === 'THREAT' ? 'status-threat-blink' : ''}`;
+        row.style.cursor = 'pointer';
+        row.onclick = () => investigatePacket(p.id);
+        
+        row.innerHTML = `
+          <td style="font-family:'JetBrains Mono'; font-size:11px; color:var(--text-dim)">${p.timestamp_str || new Date().toLocaleTimeString()}</td>
+          <td><span class="ip-txt" style="color:var(--accent)">${p.src_ip}</span>${srcBadge}</td>
+          <td><span class="ip-txt" style="color:var(--purple)">${p.dst_ip}</span>${dstBadge}</td>
+          <td><span class="badge-proto ${protoClass}">${p.protocol}</span></td>
+          <td style="font-family:'JetBrains Mono'; color:var(--text-dim); font-size:11px">${portStr}</td>
+          <td style="font-family:'JetBrains Mono'; font-size:11px">${p.length}</td>
+          <td>
+            ${p.security_status === 'THREAT' ?
+              `<span style="padding:4px 8px; border-radius:6px; font-size:10px; font-weight:800; background:var(--red)22; color:var(--red); border:1px solid var(--red)44">THREAT</span>` :
+              (p.security_status === 'SUSPICIOUS' ? 
+                `<span style="padding:4px 8px; border-radius:6px; font-size:10px; font-weight:800; background:var(--orange)22; color:var(--orange); border:1px solid var(--orange)44">SUSPICIOUS</span>` :
+                `<span style="padding:4px 8px; border-radius:6px; font-size:10px; font-weight:800; background:var(--green)22; color:var(--green); border:1px solid var(--green)44">CLEAN</span>`)
+            }
+          </td>
+        `;
+
+        if (tbody.firstChild) {
+          tbody.insertBefore(row, tbody.firstChild);
+        } else {
+          tbody.appendChild(row);
+        }
+        
+        packetCount++;
+        // Maintain limit
+        if (tbody.children.length > MAX_PACKETS) {
+          tbody.removeChild(tbody.lastChild);
+        }
+      });
+    }
+
+    // --- Traffic Intelligence WebSocket ---
+    let trafficWs;
+    function initTrafficIntelWs() {
+      if (trafficWs) return;
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      trafficWs = new WebSocket(`${protocol}//${window.location.host}/ws/traffic-intel`);
+      
+      trafficWs.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'traffic_intel') {
+          renderTrafficIntel(data.metrics);
+        }
+      };
+      
+      trafficWs.onclose = () => {
+        trafficWs = null;
+        setTimeout(initTrafficIntelWs, 3000);
+      };
+    }
+
+    function renderTrafficIntel(metrics) {
+      const tbody = document.getElementById('protocolMetricsBody');
+      if (!tbody) return;
+
+      tbody.innerHTML = metrics.map(m => {
+        const protoClass = `proto-${m.protocol.toLowerCase()}`;
+        
+        let threatColor = "var(--green)";
+        if (m.threat_level === 'ANOMALY') threatColor = "var(--orange)";
+        if (m.threat_level === 'THREAT') threatColor = "var(--red)";
+
         return `
-          <tr onclick="investigatePacket(${p.id})" style="cursor:pointer" class="hover-row">
-            <td style="font-family:'JetBrains Mono'; font-size:11px; color:var(--text-dim)">${p.timestamp_str || new Date(p.timestamp * 1000).toLocaleTimeString()}</td>
-            <td style="font-family:'JetBrains Mono'; font-weight:700; color:var(--accent)">${p.src_ip}</td>
-            <td style="font-family:'JetBrains Mono'; font-weight:700; color:var(--purple)">${p.dst_ip}</td>
-            <td><span style="padding:2px 6px; background:rgba(255,255,255,0.05); border-radius:4px; font-size:10px; font-weight:700">${p.protocol}</span></td>
-            <td style="font-family:'JetBrains Mono'; color:var(--text-dim)">${portStr}</td>
-            <td style="font-family:'JetBrains Mono'">${p.length}</td>
+          <tr class="hover-row">
+            <td><span class="badge-proto ${protoClass}">${m.protocol}</span></td>
+            <td style="font-family:'JetBrains Mono'">${m.packet_count.toLocaleString()}</td>
+            <td style="font-family:'JetBrains Mono'">${m.avg_size} B</td>
+            <td style="font-family:'JetBrains Mono'; color:var(--accent)">${m.pps}</td>
             <td>
-              ${p.is_threat ?
-            `<span style="padding:4px 8px; border-radius:6px; font-size:10px; font-weight:800; background:var(--red)22; color:var(--red); border:1px solid var(--red)44">THREAT</span>` :
-            `<span style="padding:4px 8px; border-radius:6px; font-size:10px; font-weight:800; background:var(--green)22; color:var(--green); border:1px solid var(--green)44">CLEAN</span>`
-          }
+              <span class="badge-ip ${m.traffic_type === 'Internal' ? 'ip-int' : 'ip-ext'}">${m.traffic_type}</span>
+            </td>
+            <td style="font-family:'JetBrains Mono'; color:var(--purple)">${m.entropy}</td>
+            <td>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <div style="width:8px; height:8px; border-radius:50%; background:${threatColor}"></div>
+                <span style="font-size:10px; font-weight:800; color:${threatColor}">${m.threat_level}</span>
+              </div>
+            </td>
+            <td style="min-width:150px">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px">
+                <span style="font-size:9px; opacity:0.6">${m.unique_src} src / ${m.unique_dst} dst</span>
+                <span style="font-size:10px; font-weight:700">${m.variance}%</span>
+              </div>
+              <div class="variance-container">
+                <div class="variance-fill" style="width: ${m.variance}%"></div>
+              </div>
             </td>
           </tr>
         `;
@@ -1866,9 +2081,13 @@
         const apiNodes = Object.values(data.threat_map).map(t => ({
           id: t.ip,
           level: t.level,
+          score: t.score || 0,
           isLocal: t.ip === data.local_ip,
           lastSeen: now,
-          attack_types: t.attack_types || []
+          attack_types: t.attack_types || [],
+          mitre_id: t.mitre_id,
+          mitre_tactic: t.mitre_tactic,
+          total_packets: t.total_packets || 0
         }));
 
         const apiLinks = data.links.map(l => ({
@@ -1878,7 +2097,9 @@
           dst_id: l.dst_ip,
           weight: l.weight,
           isThreat: l.threat_count > 0,
-          lastSeen: now
+          lastSeen: now,
+          lastInboundPulse: 0,
+          lastOutboundPulse: 0
         }));
 
         // Merge logic: keep existing node positions if they exist
@@ -1933,13 +2154,32 @@
       // Simulation
       if (!topoSimulation) {
         topoSimulation = d3.forceSimulation(topoNodes)
-          .force('link', d3.forceLink(topoLinks).id(d => d.id).distance(200))
-          .force('charge', d3.forceManyBody().strength(-400))
+          .force('link', d3.forceLink(topoLinks).id(d => d.id).distance(d => d.isThreat ? 150 : 220))
+          .force('charge', d3.forceManyBody().strength(d => d.isLocal ? -1000 : -500))
           .force('center', d3.forceCenter(W / 2, H / 2))
-          .force('collision', d3.forceCollide().radius(50));
+          .force('collision', d3.forceCollide().radius(60))
+          // Regional Clustering Force: Keep Internal IPs closer to hub
+          .force('x', d3.forceX(W / 2).strength(d => {
+             if (d.isLocal) return 1;
+             const isInternal = d.id.startsWith('192.168.') || d.id.startsWith('10.') || d.id.startsWith('172.');
+             return isInternal ? 0.1 : 0.02;
+          }))
+          .force('y', d3.forceY(H / 2).strength(d => {
+             if (d.isLocal) return 1;
+             const isInternal = d.id.startsWith('192.168.') || d.id.startsWith('10.') || d.id.startsWith('172.');
+             return isInternal ? 0.1 : 0.02;
+          }));
       } else {
         topoSimulation.nodes(topoNodes);
         topoSimulation.force('link').links(topoLinks);
+        
+        // Pin the local hub
+        const local = topoNodes.find(n => n.isLocal);
+        if (local) {
+          local.fx = W / 2;
+          local.fy = H / 2;
+        }
+
         topoSimulation.alpha(0.3).restart();
       }
 
@@ -1962,27 +2202,53 @@
 
       // Nodes Join
       const node = topoG.select('#topoNodesLayer').selectAll('.node-group')
-
         .data(topoNodes, d => d.id)
         .join(
           enter => {
             const g = enter.append('g').attr('class', 'node-group');
+            
+            // Outer glow circle for threats
             g.append('circle')
-              .attr('class', d => `topo-node ${d.isLocal ? 'local' : ''} threat-${d.level}`)
-              .attr('r', d => d.isLocal ? 14 : 9)
-              .attr('fill', d => d.isLocal ? '#8b5cf6' : '#0f172a');
+              .attr('class', 'node-glow')
+              .attr('r', 18)
+              .attr('fill', 'none')
+              .attr('stroke', d => d.score > 70 ? 'var(--red)' : d.score > 30 ? 'var(--orange)' : 'var(--accent)')
+              .style('opacity', 0);
+
+            g.append('circle')
+              .attr('class', d => `topo-node ${d.isLocal ? 'local' : ''} ${d.mitre_id ? 'pulse-active' : ''}`)
+              .attr('r', d => d.isLocal ? 16 : 10)
+              .attr('fill', d => {
+                 if (d.isLocal) return 'var(--purple)';
+                 if (d.score > 70) return 'var(--red)';
+                 if (d.score > 30) return 'var(--orange)';
+                 return 'var(--sidebar)';
+              })
+              .attr('stroke', d => {
+                 if (d.isLocal) return '#fff';
+                 if (d.score > 70) return 'var(--red)';
+                 if (d.score > 30) return 'var(--orange)';
+                 return 'var(--accent)';
+              });
             
             g.append('text')
               .attr('class', d => `topo-label ${d.isLocal ? 'local-label' : ''}`)
-              .attr('dy', d => d.isLocal ? -24 : -18)
+              .attr('dy', d => d.isLocal ? -28 : -22)
               .attr('text-anchor', 'middle')
-              .text(d => d.isLocal ? 'COMMAND_HUB' : d.id);
+              .text(d => d.isLocal ? 'Local Hub' : d.id);
             
             g.style('opacity', 0).transition().duration(500).style('opacity', 1);
             return g;
           },
           update => {
-             update.select('circle').attr('class', d => `topo-node ${d.isLocal ? 'local' : ''} threat-${d.level}`);
+             update.select('.topo-node')
+               .attr('class', d => `topo-node ${d.isLocal ? 'local' : ''} ${d.mitre_id ? 'pulse-active' : ''}`)
+               .attr('fill', d => {
+                 if (d.isLocal) return 'var(--purple)';
+                 if (d.score > 70) return 'var(--red)';
+                 if (d.score > 30) return 'var(--orange)';
+                 return '#0f172a';
+               });
              return update;
           },
           exit => exit.transition().duration(500).style('opacity', 0).remove()
@@ -1998,17 +2264,25 @@
         tooltip.style('display', 'block')
           .html(`
             <div style="color:var(--accent); font-weight:800; margin-bottom:4px">${d.id}</div>
-            <div style="font-size:10px; opacity:0.8; margin-bottom:8px">${d.isLocal ? 'Local Endpoint' : 'Remote Host'}</div>
-            <div style="display:flex; justify-content:space-between; gap:20px">
-              <span style="color:var(--text-dim)">Risk Level:</span>
-               <b style="color:${d.level === 'critical' || d.level === 'high' ? 'var(--red)' : d.level === 'medium' ? 'var(--orange)' : 'var(--green)'}">${d.level.toUpperCase()}</b>
+            <div style="font-size:10px; opacity:0.8; margin-bottom:8px">${d.isLocal ? 'Local Hub' : 'Remote Asset'}</div>
+            <div style="display:flex; justify-content:space-between; gap:12px; margin-bottom:4px">
+              <span style="color:var(--text-dim)">Risk Score:</span>
+              <b style="color:${d.score > 70 ? 'var(--red)' : d.score > 30 ? 'var(--orange)' : 'var(--green)'}">${d.score}</b>
             </div>
+            <div style="display:flex; justify-content:space-between; gap:12px">
+              <span style="color:var(--text-dim)">Packets:</span>
+              <b>${d.total_packets.toLocaleString()}</b>
+            </div>
+            ${d.mitre_id ? `<div style="margin-top:8px; display:inline-block; padding:2px 6px; background:var(--red)22; color:var(--red); font-size:9px; border-radius:4px; font-weight:800">MITRE: ${d.mitre_id}</div>` : ''}
           `);
       })
       .on('mousemove', (e) => {
         tooltip.style('left', (e.offsetX + 15) + 'px').style('top', (e.offsetY - 15) + 'px');
       })
-      .on('mouseleave', () => tooltip.style('display', 'none'));
+      .on('mouseleave', () => tooltip.style('display', 'none'))
+      .on('click', (e, d) => {
+        openIntelPanel(d);
+      });
 
       topoSimulation.on('tick', () => {
         link
@@ -2018,6 +2292,11 @@
           .attr('y2', d => d.target.y);
 
         node.attr('transform', d => `translate(${d.x},${d.y})`);
+        
+        // Dynamic Glow for threats
+        node.select('.node-glow')
+          .style('opacity', d => d.score > 30 ? 0.3 : 0)
+          .attr('r', d => d.isLocal ? 24 : 18);
       });
 
       // --- Directional Animation Particles ---
@@ -2043,22 +2322,85 @@
       function spawnParticle(l, isOutbound) {
         const start = isOutbound ? l.source : l.target;
         const end = isOutbound ? l.target : l.source;
+        if (!start || !end || isNaN(start.x)) return;
+
+        // Speed based on throughput (weight)
+        const duration = Math.max(800, 2500 - (l.weight * 50));
         
         topoG.select('#topoParticlesLayer').append('circle')
-          .attr('r', 4)
-          .attr('fill', isOutbound ? '#00FFFF' : '#A855F7')
+          .attr('r', Math.min(2 + (l.weight / 10), 6))
+          .attr('fill', l.isThreat ? 'var(--red)' : (isOutbound ? '#00f2ff' : '#8b5cf6'))
           .attr('filter', 'url(#glow)')
           .attr('cx', start.x)
           .attr('cy', start.y)
-          .style('opacity', 0.9)
+          .style('opacity', 0.8)
           .transition()
-          .duration(2000)
-          .ease(d3.easeLinear)
+          .duration(duration)
+          .ease(d3.easeQuadInOut)
           .attr('cx', end.x)
           .attr('cy', end.y)
           .style('opacity', 0)
           .remove();
       }
+
+      function openIntelPanel(d) {
+        const panel = document.getElementById('topoIntelPanel');
+        const content = document.getElementById('intelContent');
+        panel.style.display = 'block';
+
+        const isInternal = d.id.startsWith('192.168.') || d.id.startsWith('10.') || d.id.startsWith('172.');
+        const riskColor = d.score > 70 ? 'var(--red)' : d.score > 30 ? 'var(--orange)' : 'var(--green)';
+
+        content.innerHTML = `
+          <div style="text-align:center; margin-bottom:24px">
+            <h2 style="font-family:'JetBrains Mono'; font-size:20px; color:#fff">${d.id}</h2>
+            <div style="font-size:10px; color:var(--text-dim); margin-top:4px">${isInternal ? 'TRUSTED INTERNAL ASSET' : 'EXTERNAL PEER'}</div>
+          </div>
+
+          <div style="background:rgba(255,255,255,0.02); padding:16px; border-radius:12px; border:1px solid var(--border); margin-bottom:20px">
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px">
+              <span style="font-size:11px; color:var(--text-dim)">THREAT INDEX</span>
+              <b style="color:${riskColor}; font-family:'JetBrains Mono'">${d.score}/100</b>
+            </div>
+            <div style="height:4px; background:rgba(255,255,255,0.05); border-radius:2px; overflow:hidden">
+              <div style="width:${d.score}%; height:100%; background:${riskColor}"></div>
+            </div>
+          </div>
+
+          <div class="investigation-pair"><label>Connections</label><span>${d.total_packets.toLocaleString()}</span></div>
+          <div class="investigation-pair"><label>Last Active</label><span>${new Date(d.lastSeen).toLocaleTimeString()}</span></div>
+          
+          ${d.mitre_id ? `
+            <div style="margin-top:24px">
+              <div style="font-size:10px; font-weight:800; color:var(--red); margin-bottom:12px; display:flex; align-items:center; gap:8px">
+                <i data-lucide="shield-alert" style="width:14px"></i> MITRE ATT&CK DETECTED
+              </div>
+              <div style="background:var(--red)11; border-left:3px solid var(--red); padding:12px; border-radius:4px">
+                <div style="font-size:12px; font-weight:700; color:#fff; margin-bottom:4px">${d.mitre_tactic}</div>
+                <div style="font-size:11px; color:var(--text-dim)">Technique: <span style="color:var(--red); font-weight:700">${d.mitre_id}</span></div>
+              </div>
+            </div>
+          ` : ''}
+
+          ${d.attack_types && d.attack_types.length > 0 ? `
+            <div style="margin-top:24px">
+              <div style="font-size:10px; font-weight:800; color:var(--text-dim); margin-bottom:12px">OBSERVED BEHAVIORS</div>
+              <div style="display:flex; flex-wrap:wrap; gap:6px">
+                ${d.attack_types.map(t => `<span style="font-size:9px; background:rgba(255,255,255,0.05); padding:3px 8px; border-radius:100px; color:var(--text-dim)">${t}</span>`).join('')}
+              </div>
+            </div>
+          ` : ''}
+
+          <button class="btn-primary" style="width:100%; margin-top:32px; padding:12px; font-size:11px" onclick="window.switchView('logs'); document.getElementById('logSearch').value='${d.id}'; fetchLogs();">
+            VIEW SECURITY LOGS
+          </button>
+        `;
+        lucide.createIcons();
+      }
+
+      window.closeIntelPanel = function() {
+        document.getElementById('topoIntelPanel').style.display = 'none';
+      };
 
 
 
@@ -2104,6 +2446,13 @@
           serverUptimeOffset = sys.uptime_seconds;
           localUptimeStart = Date.now();
           uptimeSynced = true;
+        }
+        if (sys.mongodb_connected !== undefined) {
+          const dbEl = document.getElementById('dbStatus');
+          if (dbEl) {
+            dbEl.textContent = sys.mongodb_connected ? 'MongoDB Atlas (Online)' : 'SQLite Local (Offline)';
+            dbEl.style.color = sys.mongodb_connected ? 'var(--green)' : 'var(--accent)';
+          }
         }
       } catch (e) { console.warn('[SystemMetrics] poll failed:', e); }
     }

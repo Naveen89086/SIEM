@@ -64,11 +64,15 @@ except KeyboardInterrupt:
 
 finally:
     print("[+] Stopping tshark process...")
+    # Flush packet buffer
+    from database import packet_buffer
+    packet_buffer.stop()
+    
     if proc and proc.poll() is None:
         proc.terminate()
         try:
             proc.wait(timeout=3)
         except:
             proc.kill()
-    print("[+] Capture closed safely")
+    print("[+] Capture closed safely and buffer flushed")
     sys.exit(0)

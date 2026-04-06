@@ -1,574 +1,5 @@
 [
   {
-    "timestamp": 1773380803.7057161,
-    "timestamp_str": "2026-03-13 11:16:43",
-    "type": "RATE_LIMIT",
-    "severity": "HIGH",
-    "message": "High packet rate from 192.168.137.229 \u2192 192.168.137.255 (20 pkts/60s)",
-    "details": {
-      "src_ip": "192.168.137.229",
-      "dst_ip": "192.168.137.255",
-      "count": 20,
-      "enrichment": {
-        "risk_score": 21.0,
-        "confidence": 80,
-        "asset_criticality": "HIGH"
-      }
-    },
-    "mitre_id": "T1498",
-    "mitre_tactic": "Impact",
-    "src_ip": "192.168.137.229",
-    "dst_ip": "192.168.137.255",
-    "protocol": "IP",
-    "port": ""
-  },
-  {
-    "timestamp": 1773380816.5931537,
-    "timestamp_str": "2026-03-13 11:16:56",
-    "type": "PORT_SCAN",
-    "severity": "MEDIUM",
-    "message": "Port Scan detected from 192.168.137.229 (5 unique ports probed)",
-    "details": {
-      "src_ip": "192.168.137.229",
-      "ports_scanned": 5,
-      "enrichment": {
-        "risk_score": 9.9,
-        "confidence": 80,
-        "asset_criticality": "HIGH"
-      }
-    },
-    "mitre_id": "T1046",
-    "mitre_tactic": "Discovery",
-    "src_ip": "192.168.137.229",
-    "dst_ip": "",
-    "protocol": "",
-    "port": "443"
-  },
-  {
-    "timestamp": 1773380816.9419851,
-    "timestamp_str": "2026-03-13 11:16:56",
-    "type": "PORT_SCAN",
-    "severity": "MEDIUM",
-    "message": "Port Scan detected from 192.168.137.1 (5 unique ports probed)",
-    "details": {
-      "src_ip": "192.168.137.1",
-      "ports_scanned": 5,
-      "enrichment": {
-        "risk_score": 20.12,
-        "confidence": 80,
-        "asset_criticality": "HIGH"
-      }
-    },
-    "mitre_id": "T1046",
-    "mitre_tactic": "Discovery",
-    "src_ip": "192.168.137.1",
-    "dst_ip": "",
-    "protocol": "",
-    "port": "53891"
-  },
-  {
-    "timestamp": 1773380817.5406957,
-    "timestamp_str": "2026-03-13 11:16:57",
-    "type": "RATE_LIMIT",
-    "severity": "HIGH",
-    "message": "High packet rate from 4.213.25.241 \u2192 192.168.137.229 (20 pkts/60s)",
-    "details": {
-      "src_ip": "4.213.25.241",
-      "dst_ip": "192.168.137.229",
-      "count": 20,
-      "enrichment": {
-        "risk_score": 31.52,
-        "confidence": 80,
-        "asset_criticality": "MEDIUM"
-      }
-    },
-    "mitre_id": "T1498",
-    "mitre_tactic": "Impact",
-    "src_ip": "4.213.25.241",
-    "dst_ip": "192.168.137.229",
-    "protocol": "IP",
-    "port": ""
-  },
-  {
-    "timestamp": 1773380817.8283358,
-    "timestamp_str": "2026-03-13 11:16:57",
-    "type": "RATE_LIMIT",
-    "severity": "HIGH",
-    "message": "High packet rate from 104.18.32.47 \u2192 192.168.137.229 (20 pkts/60s)",
-    "details": {
-      "src_ip": "104.18.32.47",
-      "dst_ip": "192.168.137.229",
-      "count": 20,
-      "enrichment": {
-        "risk_score": 36.05,
-        "confidence": 80,
-        "asset_criticality": "MEDIUM"
-      }
-    },
-    "mitre_id": "T1498",
-    "mitre_tactic": "Impact",
-    "src_ip": "104.18.32.47",
-    "dst_ip": "192.168.137.229",
-    "protocol": "IP",
-    "port": ""
-  },
-  {
-    "timestamp": 1773380818.0831642,
-    "timestamp_str": "2026-03-13 11:16:58",
-    "type": "RATE_LIMIT",
-    "severity": "HIGH",
-    "message": "High packet rate from 192.178.211.84 \u2192 192.168.137.229 (20 pkts/60s)",
-    "details": {
-      "src_ip": "192.178.211.84",
-      "dst_ip": "192.168.137.229",
-      "count": 20,
-      "enrichment": {
-        "risk_score": 39.05,
-        "confidence": 80,
-        "asset_criticality": "HIGH"
-      }
-    },
-    "mitre_id": "T1498",
-    "mitre_tactic": "Impact",
-    "src_ip": "192.178.211.84",
-    "dst_ip": "192.168.137.229",
-    "protocol": "IP",
-    "port": ""
-  },
-  {
-    "timestamp": 1773380818.5529583,
-    "timestamp_str": "2026-03-13 11:16:58",
-    "type": "RATE_LIMIT",
-    "severity": "HIGH",
-    "message": "High packet rate from 13.107.137.11 \u2192 192.168.137.229 (20 pkts/60s)",
-    "details": {
-      "src_ip": "13.107.137.11",
-      "dst_ip": "192.168.137.229",
-      "count": 20,
-      "enrichment": {
-        "risk_score": 45.84,
-        "confidence": 80,
-        "asset_criticality": "MEDIUM"
-      }
-    },
-    "mitre_id": "T1498",
-    "mitre_tactic": "Impact",
-    "src_ip": "13.107.137.11",
-    "dst_ip": "192.168.137.229",
-    "protocol": "IP",
-    "port": ""
-  },
-  {
-    "timestamp": 1773380818.7603674,
-    "timestamp_str": "2026-03-13 11:16:58",
-    "type": "RATE_LIMIT",
-    "severity": "HIGH",
-    "message": "High packet rate from 192.168.137.1 \u2192 192.168.137.229 (20 pkts/60s)",
-    "details": {
-      "src_ip": "192.168.137.1",
-      "dst_ip": "192.168.137.229",
-      "count": 20,
-      "enrichment": {
-        "risk_score": 95.49,
-        "confidence": 80,
-        "asset_criticality": "HIGH"
-      }
-    },
-    "mitre_id": "T1498",
-    "mitre_tactic": "Impact",
-    "src_ip": "192.168.137.1",
-    "dst_ip": "192.168.137.229",
-    "protocol": "IP",
-    "port": ""
-  },
-  {
-    "timestamp": 1773380820.14601,
-    "timestamp_str": "2026-03-13 11:17:00",
-    "type": "RATE_LIMIT",
-    "severity": "HIGH",
-    "message": "High packet rate from 216.239.32.116 \u2192 192.168.137.229 (20 pkts/60s)",
-    "details": {
-      "src_ip": "216.239.32.116",
-      "dst_ip": "192.168.137.229",
-      "count": 20,
-      "enrichment": {
-        "risk_score": 66.71,
-        "confidence": 80,
-        "asset_criticality": "MEDIUM"
-      }
-    },
-    "mitre_id": "T1498",
-    "mitre_tactic": "Impact",
-    "src_ip": "216.239.32.116",
-    "dst_ip": "192.168.137.229",
-    "protocol": "IP",
-    "port": ""
-  },
-  {
-    "timestamp": 1773380820.5304785,
-    "timestamp_str": "2026-03-13 11:17:00",
-    "type": "RATE_LIMIT",
-    "severity": "HIGH",
-    "message": "High packet rate from 23.201.53.138 \u2192 192.168.137.229 (20 pkts/60s)",
-    "details": {
-      "src_ip": "23.201.53.138",
-      "dst_ip": "192.168.137.229",
-      "count": 20,
-      "enrichment": {
-        "risk_score": 72.35,
-        "confidence": 80,
-        "asset_criticality": "MEDIUM"
-      }
-    },
-    "mitre_id": "T1498",
-    "mitre_tactic": "Impact",
-    "src_ip": "23.201.53.138",
-    "dst_ip": "192.168.137.229",
-    "protocol": "IP",
-    "port": ""
-  },
-  {
-    "timestamp": 1773380820.87775,
-    "timestamp_str": "2026-03-13 11:17:00",
-    "type": "RATE_LIMIT",
-    "severity": "HIGH",
-    "message": "High packet rate from 192.178.211.108 \u2192 192.168.137.229 (20 pkts/60s)",
-    "details": {
-      "src_ip": "192.178.211.108",
-      "dst_ip": "192.168.137.229",
-      "count": 20,
-      "enrichment": {
-        "risk_score": 77.36,
-        "confidence": 80,
-        "asset_criticality": "HIGH"
-      }
-    },
-    "mitre_id": "T1498",
-    "mitre_tactic": "Impact",
-    "src_ip": "192.178.211.108",
-    "dst_ip": "192.168.137.229",
-    "protocol": "IP",
-    "port": ""
-  },
-  {
-    "timestamp": 1773380821.0467575,
-    "timestamp_str": "2026-03-13 11:17:01",
-    "type": "PORT_SCAN",
-    "severity": "MEDIUM",
-    "message": "Port Scan detected from 23.208.65.107 (5 unique ports probed)",
-    "details": {
-      "src_ip": "23.208.65.107",
-      "ports_scanned": 5,
-      "enrichment": {
-        "risk_score": 34.33,
-        "confidence": 80,
-        "asset_criticality": "MEDIUM"
-      }
-    },
-    "mitre_id": "T1046",
-    "mitre_tactic": "Discovery",
-    "src_ip": "23.208.65.107",
-    "dst_ip": "",
-    "protocol": "",
-    "port": "63934"
-  },
-  {
-    "timestamp": 1773380821.2467394,
-    "timestamp_str": "2026-03-13 11:17:01",
-    "type": "RATE_LIMIT",
-    "severity": "HIGH",
-    "message": "High packet rate from 23.208.65.107 \u2192 192.168.137.229 (20 pkts/60s)",
-    "details": {
-      "src_ip": "23.208.65.107",
-      "dst_ip": "192.168.137.229",
-      "count": 20,
-      "enrichment": {
-        "risk_score": 81.43,
-        "confidence": 80,
-        "asset_criticality": "MEDIUM"
-      }
-    },
-    "mitre_id": "T1498",
-    "mitre_tactic": "Impact",
-    "src_ip": "23.208.65.107",
-    "dst_ip": "192.168.137.229",
-    "protocol": "IP",
-    "port": ""
-  },
-  {
-    "timestamp": 1773380848.4718633,
-    "timestamp_str": "2026-03-13 11:17:28",
-    "type": "RATE_LIMIT",
-    "severity": "HIGH",
-    "message": "High packet rate from 64.233.170.188 \u2192 192.168.137.229 (20 pkts/60s)",
-    "details": {
-      "src_ip": "64.233.170.188",
-      "dst_ip": "192.168.137.229",
-      "count": 20,
-      "enrichment": {
-        "risk_score": 12.0,
-        "confidence": 80,
-        "asset_criticality": "MEDIUM"
-      }
-    },
-    "mitre_id": "T1498",
-    "mitre_tactic": "Impact",
-    "src_ip": "64.233.170.188",
-    "dst_ip": "192.168.137.229",
-    "protocol": "IP",
-    "port": ""
-  },
-  {
-    "timestamp": 1773380849.2020152,
-    "timestamp_str": "2026-03-13 11:17:29",
-    "type": "RATE_LIMIT",
-    "severity": "HIGH",
-    "message": "High packet rate from 34.54.84.110 \u2192 192.168.137.229 (20 pkts/60s)",
-    "details": {
-      "src_ip": "34.54.84.110",
-      "dst_ip": "192.168.137.229",
-      "count": 20,
-      "enrichment": {
-        "risk_score": 12.15,
-        "confidence": 80,
-        "asset_criticality": "MEDIUM"
-      }
-    },
-    "mitre_id": "T1498",
-    "mitre_tactic": "Impact",
-    "src_ip": "34.54.84.110",
-    "dst_ip": "192.168.137.229",
-    "protocol": "IP",
-    "port": ""
-  },
-  {
-    "timestamp": 1773380850.895672,
-    "timestamp_str": "2026-03-13 11:17:30",
-    "type": "RATE_LIMIT",
-    "severity": "HIGH",
-    "message": "High packet rate from 23.201.53.161 \u2192 192.168.137.229 (20 pkts/60s)",
-    "details": {
-      "src_ip": "23.201.53.161",
-      "dst_ip": "192.168.137.229",
-      "count": 20,
-      "enrichment": {
-        "risk_score": 19.38,
-        "confidence": 80,
-        "asset_criticality": "MEDIUM"
-      }
-    },
-    "mitre_id": "T1498",
-    "mitre_tactic": "Impact",
-    "src_ip": "23.201.53.161",
-    "dst_ip": "192.168.137.229",
-    "protocol": "IP",
-    "port": ""
-  },
-  {
-    "timestamp": 1773380860.9126642,
-    "timestamp_str": "2026-03-13 11:17:40",
-    "type": "RATE_LIMIT",
-    "severity": "HIGH",
-    "message": "High packet rate from 23.205.118.16 \u2192 192.168.137.229 (20 pkts/60s)",
-    "details": {
-      "src_ip": "23.205.118.16",
-      "dst_ip": "192.168.137.229",
-      "count": 20,
-      "enrichment": {
-        "risk_score": 12.45,
-        "confidence": 80,
-        "asset_criticality": "MEDIUM"
-      }
-    },
-    "mitre_id": "T1498",
-    "mitre_tactic": "Impact",
-    "src_ip": "23.205.118.16",
-    "dst_ip": "192.168.137.229",
-    "protocol": "IP",
-    "port": ""
-  },
-  {
-    "timestamp": 1773380868.8620048,
-    "timestamp_str": "2026-03-13 11:17:48",
-    "type": "PORT_SCAN",
-    "severity": "MEDIUM",
-    "message": "Port Scan detected from 23.205.118.16 (5 unique ports probed)",
-    "details": {
-      "src_ip": "23.205.118.16",
-      "ports_scanned": 5,
-      "enrichment": {
-        "risk_score": 9.16,
-        "confidence": 80,
-        "asset_criticality": "MEDIUM"
-      }
-    },
-    "mitre_id": "T1046",
-    "mitre_tactic": "Discovery",
-    "src_ip": "23.205.118.16",
-    "dst_ip": "",
-    "protocol": "",
-    "port": "52680"
-  },
-  {
-    "timestamp": 1773380880.2108603,
-    "timestamp_str": "2026-03-13 11:18:00",
-    "type": "DATA_EXFIL",
-    "severity": "CRITICAL",
-    "message": "Possible Data Exfiltration from 192.168.137.229 (5.0MB sent in 120s)",
-    "details": {
-      "src_ip": "192.168.137.229",
-      "bytes_sent": 5001217,
-      "enrichment": {
-        "risk_score": 68.42,
-        "confidence": 80,
-        "asset_criticality": "HIGH"
-      }
-    },
-    "mitre_id": "T1048",
-    "mitre_tactic": "Exfiltration",
-    "src_ip": "192.168.137.229",
-    "dst_ip": "",
-    "protocol": "",
-    "port": ""
-  },
-  {
-    "timestamp": 1773380896.044689,
-    "timestamp_str": "2026-03-13 11:18:16",
-    "type": "RATE_LIMIT",
-    "severity": "HIGH",
-    "message": "High packet rate from 135.233.95.135 \u2192 192.168.137.229 (20 pkts/60s)",
-    "details": {
-      "src_ip": "135.233.95.135",
-      "dst_ip": "192.168.137.229",
-      "count": 20,
-      "enrichment": {
-        "risk_score": 25.83,
-        "confidence": 80,
-        "asset_criticality": "MEDIUM"
-      }
-    },
-    "mitre_id": "T1498",
-    "mitre_tactic": "Impact",
-    "src_ip": "135.233.95.135",
-    "dst_ip": "192.168.137.229",
-    "protocol": "IP",
-    "port": ""
-  },
-  {
-    "timestamp": 1773380903.967851,
-    "timestamp_str": "2026-03-13 11:18:23",
-    "type": "RATE_LIMIT",
-    "severity": "HIGH",
-    "message": "High packet rate from 20.189.173.15 \u2192 192.168.137.229 (20 pkts/60s)",
-    "details": {
-      "src_ip": "20.189.173.15",
-      "dst_ip": "192.168.137.229",
-      "count": 20,
-      "enrichment": {
-        "risk_score": 32.0,
-        "confidence": 80,
-        "asset_criticality": "MEDIUM"
-      }
-    },
-    "mitre_id": "T1498",
-    "mitre_tactic": "Impact",
-    "src_ip": "20.189.173.15",
-    "dst_ip": "192.168.137.229",
-    "protocol": "IP",
-    "port": ""
-  },
-  {
-    "timestamp": 1773380919.569281,
-    "timestamp_str": "2026-03-13 11:18:39",
-    "type": "RATE_LIMIT",
-    "severity": "HIGH",
-    "message": "High packet rate from 20.44.229.112 \u2192 192.168.137.229 (20 pkts/60s)",
-    "details": {
-      "src_ip": "20.44.229.112",
-      "dst_ip": "192.168.137.229",
-      "count": 20,
-      "enrichment": {
-        "risk_score": 12.9,
-        "confidence": 80,
-        "asset_criticality": "MEDIUM"
-      }
-    },
-    "mitre_id": "T1498",
-    "mitre_tactic": "Impact",
-    "src_ip": "20.44.229.112",
-    "dst_ip": "192.168.137.229",
-    "protocol": "IP",
-    "port": ""
-  },
-  {
-    "timestamp": 1773380926.6856964,
-    "timestamp_str": "2026-03-13 11:18:46",
-    "type": "RATE_LIMIT",
-    "severity": "HIGH",
-    "message": "High packet rate from 44.241.150.95 \u2192 192.168.137.229 (20 pkts/60s)",
-    "details": {
-      "src_ip": "44.241.150.95",
-      "dst_ip": "192.168.137.229",
-      "count": 20,
-      "enrichment": {
-        "risk_score": 26.36,
-        "confidence": 80,
-        "asset_criticality": "MEDIUM"
-      }
-    },
-    "mitre_id": "T1498",
-    "mitre_tactic": "Impact",
-    "src_ip": "44.241.150.95",
-    "dst_ip": "192.168.137.229",
-    "protocol": "IP",
-    "port": ""
-  },
-  {
-    "timestamp": 1773380932.5983336,
-    "timestamp_str": "2026-03-13 11:18:52",
-    "type": "PORT_SCAN",
-    "severity": "MEDIUM",
-    "message": "Port Scan detected from 44.241.150.95 (5 unique ports probed)",
-    "details": {
-      "src_ip": "44.241.150.95",
-      "ports_scanned": 5,
-      "enrichment": {
-        "risk_score": 14.74,
-        "confidence": 80,
-        "asset_criticality": "MEDIUM"
-      }
-    },
-    "mitre_id": "T1046",
-    "mitre_tactic": "Discovery",
-    "src_ip": "44.241.150.95",
-    "dst_ip": "",
-    "protocol": "",
-    "port": "58570"
-  },
-  {
-    "timestamp": 1773380946.3886452,
-    "timestamp_str": "2026-03-13 11:19:06",
-    "type": "RATE_LIMIT",
-    "severity": "HIGH",
-    "message": "High packet rate from 104.208.16.95 \u2192 192.168.137.229 (20 pkts/60s)",
-    "details": {
-      "src_ip": "104.208.16.95",
-      "dst_ip": "192.168.137.229",
-      "count": 20,
-      "enrichment": {
-        "risk_score": 38.65,
-        "confidence": 80,
-        "asset_criticality": "MEDIUM"
-      }
-    },
-    "mitre_id": "T1498",
-    "mitre_tactic": "Impact",
-    "src_ip": "104.208.16.95",
-    "dst_ip": "192.168.137.229",
-    "protocol": "IP",
-    "port": ""
-  },
-  {
     "timestamp": 1773380961.3951192,
     "timestamp_str": "2026-03-13 11:19:21",
     "type": "PORT_SCAN",
@@ -11378,5 +10809,577 @@
     "dst_ip": "",
     "protocol": "",
     "port": "62337"
+  },
+  {
+    "timestamp": 1774008787.6327972,
+    "timestamp_str": "2026-03-20 17:43:07",
+    "type": "DNS_TUNNEL",
+    "severity": "HIGH",
+    "message": "Possible DNS Tunneling from 10.147.42.209 (avg payload 84B, 15 queries)",
+    "details": {
+      "src_ip": "10.147.42.209",
+      "avg_size": 83.93333333333334,
+      "query_count": 15,
+      "enrichment": {
+        "risk_score": 69.65,
+        "confidence": 80,
+        "asset_criticality": "MEDIUM"
+      }
+    },
+    "mitre_id": "T1071.004",
+    "mitre_tactic": "Command and Control",
+    "src_ip": "10.147.42.209",
+    "dst_ip": "",
+    "protocol": "UDP",
+    "port": "53"
+  },
+  {
+    "timestamp": 1774008797.0969949,
+    "timestamp_str": "2026-03-20 17:43:17",
+    "type": "PORT_SCAN",
+    "severity": "MEDIUM",
+    "message": "Port Scan detected from 10.147.42.143 (15 unique ports probed)",
+    "details": {
+      "src_ip": "10.147.42.143",
+      "ports_scanned": 15,
+      "enrichment": {
+        "risk_score": 13.92,
+        "confidence": 80,
+        "asset_criticality": "MEDIUM"
+      }
+    },
+    "mitre_id": "T1046",
+    "mitre_tactic": "Discovery",
+    "src_ip": "10.147.42.143",
+    "dst_ip": "",
+    "protocol": "",
+    "port": "54444"
+  },
+  {
+    "timestamp": 1774008797.5441694,
+    "timestamp_str": "2026-03-20 17:43:17",
+    "type": "RATE_LIMIT",
+    "severity": "HIGH",
+    "message": "High packet rate from 4.240.189.77 \u2192 10.147.42.209 (500 pkts/10s)",
+    "details": {
+      "src_ip": "4.240.189.77",
+      "dst_ip": "10.147.42.209",
+      "count": 500,
+      "enrichment": {
+        "risk_score": 31.53,
+        "confidence": 80,
+        "asset_criticality": "MEDIUM"
+      }
+    },
+    "mitre_id": "T1498",
+    "mitre_tactic": "Impact",
+    "src_ip": "4.240.189.77",
+    "dst_ip": "10.147.42.209",
+    "protocol": "IP",
+    "port": ""
+  },
+  {
+    "timestamp": 1774008806.7085786,
+    "timestamp_str": "2026-03-20 17:43:26",
+    "type": "RATE_LIMIT",
+    "severity": "HIGH",
+    "message": "High packet rate from 10.147.42.209 \u2192 4.240.189.77 (500 pkts/10s)",
+    "details": {
+      "src_ip": "10.147.42.209",
+      "dst_ip": "4.240.189.77",
+      "count": 500,
+      "enrichment": {
+        "risk_score": 41.96,
+        "confidence": 80,
+        "asset_criticality": "MEDIUM"
+      }
+    },
+    "mitre_id": "T1498",
+    "mitre_tactic": "Impact",
+    "src_ip": "10.147.42.209",
+    "dst_ip": "4.240.189.77",
+    "protocol": "IP",
+    "port": ""
+  },
+  {
+    "timestamp": 1774010107.9388683,
+    "timestamp_str": "2026-03-20 18:05:07",
+    "type": "BEACONING",
+    "severity": "MEDIUM",
+    "message": "Beaconing detected: 10.147.42.209 \u2192 142.250.4.188 (interval ~45.5s, jitter 0.87%)",
+    "details": {
+      "src_ip": "10.147.42.209",
+      "dst_ip": "142.250.4.188",
+      "avg_interval": 45.5,
+      "jitter": 0.009,
+      "enrichment": {
+        "risk_score": 7.65,
+        "confidence": 80,
+        "asset_criticality": "MEDIUM"
+      }
+    },
+    "mitre_id": "T1071.001",
+    "mitre_tactic": "Command and Control",
+    "src_ip": "10.147.42.209",
+    "dst_ip": "142.250.4.188",
+    "protocol": "",
+    "port": ""
+  },
+  {
+    "timestamp": 1774010108.1916816,
+    "timestamp_str": "2026-03-20 18:05:08",
+    "type": "BEACONING",
+    "severity": "MEDIUM",
+    "message": "Beaconing detected: 142.250.4.188 \u2192 10.147.42.209 (interval ~45.5s, jitter 0.80%)",
+    "details": {
+      "src_ip": "142.250.4.188",
+      "dst_ip": "10.147.42.209",
+      "avg_interval": 45.5,
+      "jitter": 0.008,
+      "enrichment": {
+        "risk_score": 3.9,
+        "confidence": 80,
+        "asset_criticality": "MEDIUM"
+      }
+    },
+    "mitre_id": "T1071.001",
+    "mitre_tactic": "Command and Control",
+    "src_ip": "142.250.4.188",
+    "dst_ip": "10.147.42.209",
+    "protocol": "",
+    "port": ""
+  },
+  {
+    "timestamp": 1774010222.5670671,
+    "timestamp_str": "2026-03-20 18:07:02",
+    "type": "PORT_SCAN",
+    "severity": "MEDIUM",
+    "message": "Port Scan detected from 216.239.36.223 (15 unique ports probed)",
+    "details": {
+      "src_ip": "216.239.36.223",
+      "ports_scanned": 15,
+      "enrichment": {
+        "risk_score": 8.14,
+        "confidence": 80,
+        "asset_criticality": "MEDIUM"
+      }
+    },
+    "mitre_id": "T1046",
+    "mitre_tactic": "Discovery",
+    "src_ip": "216.239.36.223",
+    "dst_ip": "",
+    "protocol": "",
+    "port": "53527"
+  },
+  {
+    "timestamp": 1774693639.0099554,
+    "timestamp_str": "2026-03-28 15:57:19",
+    "type": "PORT_SCAN",
+    "severity": "MEDIUM",
+    "message": "Port Scan detected from 10.218.187.101 (15 unique ports probed)",
+    "details": {
+      "src_ip": "10.218.187.101",
+      "ports_scanned": 15,
+      "enrichment": {
+        "risk_score": 14.18,
+        "confidence": 80,
+        "asset_criticality": "MEDIUM"
+      }
+    },
+    "mitre_id": "T1046",
+    "mitre_tactic": "Discovery",
+    "src_ip": "10.218.187.101",
+    "dst_ip": "",
+    "protocol": "",
+    "port": "62005"
+  },
+  {
+    "timestamp": 1774693640.561059,
+    "timestamp_str": "2026-03-28 15:57:20",
+    "type": "DNS_TUNNEL",
+    "severity": "HIGH",
+    "message": "Possible DNS Tunneling from 10.218.187.209 (avg payload 85B, 15 queries)",
+    "details": {
+      "src_ip": "10.218.187.209",
+      "avg_size": 85.0,
+      "query_count": 15,
+      "enrichment": {
+        "risk_score": 35.28,
+        "confidence": 80,
+        "asset_criticality": "MEDIUM"
+      }
+    },
+    "mitre_id": "T1071.004",
+    "mitre_tactic": "Command and Control",
+    "src_ip": "10.218.187.209",
+    "dst_ip": "",
+    "protocol": "UDP",
+    "port": "53"
+  },
+  {
+    "timestamp": 1774694403.9105356,
+    "timestamp_str": "2026-03-28 16:10:03",
+    "type": "PORT_SCAN",
+    "severity": "MEDIUM",
+    "message": "Port Scan detected from 192.168.137.1 (15 unique ports probed)",
+    "details": {
+      "src_ip": "192.168.137.1",
+      "ports_scanned": 15,
+      "enrichment": {
+        "risk_score": 13.04,
+        "confidence": 80,
+        "asset_criticality": "HIGH"
+      }
+    },
+    "mitre_id": "T1046",
+    "mitre_tactic": "Discovery",
+    "src_ip": "192.168.137.1",
+    "dst_ip": "",
+    "protocol": "",
+    "port": "64734"
+  },
+  {
+    "timestamp": 1774694406.5138135,
+    "timestamp_str": "2026-03-28 16:10:06",
+    "type": "DNS_TUNNEL",
+    "severity": "HIGH",
+    "message": "Possible DNS Tunneling from 192.168.137.177 (avg payload 82B, 15 queries)",
+    "details": {
+      "src_ip": "192.168.137.177",
+      "avg_size": 81.73333333333333,
+      "query_count": 15,
+      "enrichment": {
+        "risk_score": 35.88,
+        "confidence": 80,
+        "asset_criticality": "HIGH"
+      }
+    },
+    "mitre_id": "T1071.004",
+    "mitre_tactic": "Command and Control",
+    "src_ip": "192.168.137.177",
+    "dst_ip": "",
+    "protocol": "UDP",
+    "port": "53"
+  },
+  {
+    "timestamp": 1774694454.986874,
+    "timestamp_str": "2026-03-28 16:10:54",
+    "type": "DNS_TUNNEL",
+    "severity": "HIGH",
+    "message": "Possible DNS Tunneling from 172.18.195.209 (avg payload 86B, 15 queries)",
+    "details": {
+      "src_ip": "172.18.195.209",
+      "avg_size": 85.8,
+      "query_count": 15,
+      "enrichment": {
+        "risk_score": 7.95,
+        "confidence": 80,
+        "asset_criticality": "MEDIUM"
+      }
+    },
+    "mitre_id": "T1071.004",
+    "mitre_tactic": "Command and Control",
+    "src_ip": "172.18.195.209",
+    "dst_ip": "",
+    "protocol": "UDP",
+    "port": "53"
+  },
+  {
+    "timestamp": 1774694455.7549021,
+    "timestamp_str": "2026-03-28 16:10:55",
+    "type": "PORT_SCAN",
+    "severity": "MEDIUM",
+    "message": "Port Scan detected from 172.18.195.76 (15 unique ports probed)",
+    "details": {
+      "src_ip": "172.18.195.76",
+      "ports_scanned": 15,
+      "enrichment": {
+        "risk_score": 6.64,
+        "confidence": 80,
+        "asset_criticality": "MEDIUM"
+      }
+    },
+    "mitre_id": "T1046",
+    "mitre_tactic": "Discovery",
+    "src_ip": "172.18.195.76",
+    "dst_ip": "",
+    "protocol": "",
+    "port": "55732"
+  },
+  {
+    "timestamp": 1774694981.5087426,
+    "timestamp_str": "2026-03-28 16:19:41",
+    "type": "RATE_LIMIT",
+    "severity": "HIGH",
+    "message": "High packet rate from 172.18.195.209 \u2192 216.239.32.223 (500 pkts/10s)",
+    "details": {
+      "src_ip": "172.18.195.209",
+      "dst_ip": "216.239.32.223",
+      "count": 500,
+      "enrichment": {
+        "risk_score": 29.83,
+        "confidence": 80,
+        "asset_criticality": "MEDIUM"
+      }
+    },
+    "mitre_id": "T1498",
+    "mitre_tactic": "Impact",
+    "src_ip": "172.18.195.209",
+    "dst_ip": "216.239.32.223",
+    "protocol": "IP",
+    "port": ""
+  },
+  {
+    "timestamp": 1774694988.0514462,
+    "timestamp_str": "2026-03-28 16:19:48",
+    "type": "RATE_LIMIT",
+    "severity": "HIGH",
+    "message": "High packet rate from 216.239.32.223 \u2192 172.18.195.209 (500 pkts/10s)",
+    "details": {
+      "src_ip": "216.239.32.223",
+      "dst_ip": "172.18.195.209",
+      "count": 500,
+      "enrichment": {
+        "risk_score": 16.91,
+        "confidence": 80,
+        "asset_criticality": "MEDIUM"
+      }
+    },
+    "mitre_id": "T1498",
+    "mitre_tactic": "Impact",
+    "src_ip": "216.239.32.223",
+    "dst_ip": "172.18.195.209",
+    "protocol": "IP",
+    "port": ""
+  },
+  {
+    "timestamp": 1774695173.2086394,
+    "timestamp_str": "2026-03-28 16:22:53",
+    "type": "BEACONING",
+    "severity": "MEDIUM",
+    "message": "Beaconing detected: 34.18.10.222 \u2192 172.18.195.209 (interval ~15.1s, jitter 2.33%)",
+    "details": {
+      "src_ip": "34.18.10.222",
+      "dst_ip": "172.18.195.209",
+      "avg_interval": 15.1,
+      "jitter": 0.023,
+      "enrichment": {
+        "risk_score": 3.82,
+        "confidence": 80,
+        "asset_criticality": "MEDIUM"
+      }
+    },
+    "mitre_id": "T1071.001",
+    "mitre_tactic": "Command and Control",
+    "src_ip": "34.18.10.222",
+    "dst_ip": "172.18.195.209",
+    "protocol": "",
+    "port": ""
+  },
+  {
+    "timestamp": 1774695173.4762034,
+    "timestamp_str": "2026-03-28 16:22:53",
+    "type": "BEACONING",
+    "severity": "MEDIUM",
+    "message": "Beaconing detected: 172.18.195.209 \u2192 34.18.10.222 (interval ~15.1s, jitter 4.43%)",
+    "details": {
+      "src_ip": "172.18.195.209",
+      "dst_ip": "34.18.10.222",
+      "avg_interval": 15.1,
+      "jitter": 0.044,
+      "enrichment": {
+        "risk_score": 3.9,
+        "confidence": 80,
+        "asset_criticality": "MEDIUM"
+      }
+    },
+    "mitre_id": "T1071.001",
+    "mitre_tactic": "Command and Control",
+    "src_ip": "172.18.195.209",
+    "dst_ip": "34.18.10.222",
+    "protocol": "",
+    "port": ""
+  },
+  {
+    "timestamp": 1775123554.4120018,
+    "timestamp_str": "2026-04-02 15:22:34",
+    "type": "RATE_LIMIT",
+    "severity": "HIGH",
+    "message": "High packet rate from 74.224.107.134 \u2192 10.71.149.209 (500 pkts/10s)",
+    "details": {
+      "src_ip": "74.224.107.134",
+      "dst_ip": "10.71.149.209",
+      "count": 500,
+      "enrichment": {
+        "risk_score": 26.25,
+        "confidence": 80,
+        "asset_criticality": "MEDIUM"
+      }
+    },
+    "mitre_id": "T1498",
+    "mitre_tactic": "Impact",
+    "src_ip": "74.224.107.134",
+    "dst_ip": "10.71.149.209",
+    "protocol": "IP",
+    "port": ""
+  },
+  {
+    "timestamp": 1775123565.7658334,
+    "timestamp_str": "2026-04-02 15:22:45",
+    "type": "RATE_LIMIT",
+    "severity": "HIGH",
+    "message": "High packet rate from 10.71.149.209 \u2192 74.224.107.134 (500 pkts/10s)",
+    "details": {
+      "src_ip": "10.71.149.209",
+      "dst_ip": "74.224.107.134",
+      "count": 500,
+      "enrichment": {
+        "risk_score": 88.51,
+        "confidence": 80,
+        "asset_criticality": "MEDIUM"
+      }
+    },
+    "mitre_id": "T1498",
+    "mitre_tactic": "Impact",
+    "src_ip": "10.71.149.209",
+    "dst_ip": "74.224.107.134",
+    "protocol": "IP",
+    "port": ""
+  },
+  {
+    "timestamp": 1775123568.1334853,
+    "timestamp_str": "2026-04-02 15:22:48",
+    "type": "DNS_TUNNEL",
+    "severity": "HIGH",
+    "message": "Possible DNS Tunneling from 10.71.149.209 (avg payload 90B, 15 queries)",
+    "details": {
+      "src_ip": "10.71.149.209",
+      "avg_size": 89.93333333333334,
+      "query_count": 15,
+      "enrichment": {
+        "risk_score": 44.83,
+        "confidence": 80,
+        "asset_criticality": "MEDIUM"
+      }
+    },
+    "mitre_id": "T1071.004",
+    "mitre_tactic": "Command and Control",
+    "src_ip": "10.71.149.209",
+    "dst_ip": "",
+    "protocol": "UDP",
+    "port": "53"
+  },
+  {
+    "timestamp": 1775123573.4580922,
+    "timestamp_str": "2026-04-02 15:22:53",
+    "type": "PORT_SCAN",
+    "severity": "MEDIUM",
+    "message": "Port Scan detected from 10.71.149.24 (15 unique ports probed)",
+    "details": {
+      "src_ip": "10.71.149.24",
+      "ports_scanned": 15,
+      "enrichment": {
+        "risk_score": 7.65,
+        "confidence": 80,
+        "asset_criticality": "MEDIUM"
+      }
+    },
+    "mitre_id": "T1046",
+    "mitre_tactic": "Discovery",
+    "src_ip": "10.71.149.24",
+    "dst_ip": "",
+    "protocol": "",
+    "port": "65402"
+  },
+  {
+    "timestamp": 1775124124.402165,
+    "timestamp_str": "2026-04-02 15:32:04",
+    "type": "RATE_LIMIT",
+    "severity": "HIGH",
+    "message": "High packet rate from 10.71.149.209 \u2192 216.239.32.223 (500 pkts/10s)",
+    "details": {
+      "src_ip": "10.71.149.209",
+      "dst_ip": "216.239.32.223",
+      "count": 500,
+      "enrichment": {
+        "risk_score": 97.37,
+        "confidence": 80,
+        "asset_criticality": "MEDIUM"
+      }
+    },
+    "mitre_id": "T1498",
+    "mitre_tactic": "Impact",
+    "src_ip": "10.71.149.209",
+    "dst_ip": "216.239.32.223",
+    "protocol": "IP",
+    "port": ""
+  },
+  {
+    "timestamp": 1775124132.7236147,
+    "timestamp_str": "2026-04-02 15:32:12",
+    "type": "DNS_TUNNEL",
+    "severity": "HIGH",
+    "message": "Possible DNS Tunneling from 10.71.149.209 (avg payload 84B, 15 queries)",
+    "details": {
+      "src_ip": "10.71.149.209",
+      "avg_size": 84.06666666666666,
+      "query_count": 15,
+      "enrichment": {
+        "risk_score": 49.94,
+        "confidence": 80,
+        "asset_criticality": "MEDIUM"
+      }
+    },
+    "mitre_id": "T1071.004",
+    "mitre_tactic": "Command and Control",
+    "src_ip": "10.71.149.209",
+    "dst_ip": "",
+    "protocol": "UDP",
+    "port": "53"
+  },
+  {
+    "timestamp": 1775124139.9280186,
+    "timestamp_str": "2026-04-02 15:32:19",
+    "type": "PORT_SCAN",
+    "severity": "MEDIUM",
+    "message": "Port Scan detected from 10.71.149.24 (15 unique ports probed)",
+    "details": {
+      "src_ip": "10.71.149.24",
+      "ports_scanned": 15,
+      "enrichment": {
+        "risk_score": 45.17,
+        "confidence": 80,
+        "asset_criticality": "MEDIUM"
+      }
+    },
+    "mitre_id": "T1046",
+    "mitre_tactic": "Discovery",
+    "src_ip": "10.71.149.24",
+    "dst_ip": "",
+    "protocol": "",
+    "port": "55428"
+  },
+  {
+    "timestamp": 1775124637.847944,
+    "timestamp_str": "2026-04-02 15:40:37",
+    "type": "RATE_LIMIT",
+    "severity": "HIGH",
+    "message": "High packet rate from 20.72.205.209 \u2192 10.71.149.209 (500 pkts/10s)",
+    "details": {
+      "src_ip": "20.72.205.209",
+      "dst_ip": "10.71.149.209",
+      "count": 500,
+      "enrichment": {
+        "risk_score": 22.34,
+        "confidence": 80,
+        "asset_criticality": "MEDIUM"
+      }
+    },
+    "mitre_id": "T1498",
+    "mitre_tactic": "Impact",
+    "src_ip": "20.72.205.209",
+    "dst_ip": "10.71.149.209",
+    "protocol": "IP",
+    "port": ""
   }
 ]

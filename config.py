@@ -100,3 +100,11 @@ SSL_CERT_FILE = os.path.join(os.path.dirname(__file__), "cert.pem")
 SSL_KEY_FILE = os.path.join(os.path.dirname(__file__), "key.pem")
 REDIRECT_HTTP_TO_HTTPS = False
 HTTP_PORT = 80  # Optional: Standard HTTP port for redirection
+
+# -------------------------
+# MongoDB Atlas
+# -------------------------
+# PLACE YOUR MONGODB ATLAS CONNECTION STRING HERE
+MONGODB_URI = "mongodb+srv://Naveen:shreya6@cluster0.ancn7wb.mongodb.net/siemdb?retryWrites=true&w=majority"
+MONGODB_DB_NAME = "siemdb"
+MONGODB_COLLECTION = "security_logs"

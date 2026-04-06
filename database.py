@@ -7,6 +7,9 @@ import time
 import json
 import os
 from config import DB_PATH, LOG_RETENTION_DAYS
+# MongoDB integration
+from mongodb_storage import insert_log_to_atlas
+
 
 _local = threading.local()
 
@@ -22,46 +25,36 @@ def _get_conn():
 
 
 def init_db():
-    """Create tables if they don't exist."""
+    """Create optimized tables if they don't exist."""
     conn = _get_conn()
     conn.executescript("""
-        CREATE TABLE IF NOT EXISTS security_logs (
+        -- Unified security events table (optimized for SIEM dashboard)
+        CREATE TABLE IF NOT EXISTS security_events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp REAL NOT NULL,
-            src_ip TEXT DEFAULT '',
-            dst_ip TEXT DEFAULT '',
-            protocol TEXT DEFAULT '',
-            port TEXT DEFAULT '',
+            src_ip TEXT NOT NULL DEFAULT '0.0.0.0',
+            dst_ip TEXT NOT NULL DEFAULT '0.0.0.0',
+            protocol TEXT DEFAULT 'UNKNOWN',
+            src_port INTEGER,
+            dst_port INTEGER,
             alert_type TEXT NOT NULL,
-            severity TEXT NOT NULL,
-            description TEXT NOT NULL,
-            details TEXT DEFAULT '{}'
-        );
-
-        CREATE TABLE IF NOT EXISTS events (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp REAL NOT NULL,
-            timestamp_str TEXT NOT NULL,
-            event_type TEXT NOT NULL,
-            severity TEXT NOT NULL,
+            severity TEXT NOT NULL CHECK(severity IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')),
             message TEXT NOT NULL,
             details TEXT DEFAULT '{}',
             mitre_id TEXT DEFAULT '',
             mitre_tactic TEXT DEFAULT '',
-            confidence REAL DEFAULT 0.8,
-            src_ip TEXT DEFAULT '',
-            dst_ip TEXT DEFAULT '',
-            acknowledged INTEGER DEFAULT 0
+            log_hash TEXT                   -- SHA-256 hash chain for tamper-proofing
         );
 
-        CREATE TABLE IF NOT EXISTS packets (
+        -- High-throughput raw packet storage
+        CREATE TABLE IF NOT EXISTS raw_packets (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp REAL NOT NULL,
-            src_ip TEXT,
-            dst_ip TEXT,
-            protocol TEXT,
-            src_port TEXT,
-            dst_port TEXT,
+            src_ip TEXT NOT NULL DEFAULT '0.0.0.0',
+            dst_ip TEXT NOT NULL DEFAULT '0.0.0.0',
+            protocol TEXT DEFAULT 'UNKNOWN',
+            src_port TEXT DEFAULT '',
+            dst_port TEXT DEFAULT '',
             length INTEGER DEFAULT 0,
             flags TEXT DEFAULT '',
             is_threat INTEGER DEFAULT 0,
@@ -79,7 +72,7 @@ def init_db():
             severity TEXT NOT NULL,
             status TEXT DEFAULT 'OPEN',
             assigned_to TEXT DEFAULT '',
-            event_ids TEXT DEFAULT '[]',
+            event_ids TEXT DEFAULT '[]', -- References security_events.id
             notes TEXT DEFAULT '[]',
             src_ip TEXT DEFAULT '',
             kill_chain_phase TEXT DEFAULT ''
@@ -91,71 +84,147 @@ def init_db():
             risk_score REAL NOT NULL
         );
 
-        CREATE INDEX IF NOT EXISTS idx_logs_ts ON security_logs(timestamp);
-        CREATE INDEX IF NOT EXISTS idx_logs_type ON security_logs(alert_type);
-        CREATE INDEX IF NOT EXISTS idx_logs_src ON security_logs(src_ip);
-        CREATE INDEX IF NOT EXISTS idx_events_ts ON events(timestamp);
-        CREATE INDEX IF NOT EXISTS idx_events_type ON events(event_type);
-        CREATE INDEX IF NOT EXISTS idx_events_severity ON events(severity);
-        CREATE INDEX IF NOT EXISTS idx_events_src ON events(src_ip);
-        CREATE INDEX IF NOT EXISTS idx_packets_ts ON packets(timestamp);
-        CREATE INDEX IF NOT EXISTS idx_incidents_status ON incidents(status);
+        -- Optimized Indexes for Real-time Dashboard
+        CREATE INDEX IF NOT EXISTS idx_events_ts ON security_events(timestamp DESC);
+        CREATE INDEX IF NOT EXISTS idx_events_severity ON security_events(severity, timestamp DESC);
+        CREATE INDEX IF NOT EXISTS idx_events_type ON security_events(alert_type, timestamp DESC);
+        CREATE INDEX IF NOT EXISTS idx_events_src ON security_events(src_ip, timestamp DESC);
+        
+        CREATE INDEX IF NOT EXISTS idx_packets_ts ON raw_packets(timestamp DESC);
+        CREATE INDEX IF NOT EXISTS idx_incidents_status ON incidents(status, created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_risk_ts ON risk_history(timestamp DESC);
     """)
     conn.commit()
 
 
+import hashlib
+
+def calculate_log_hash(prev_hash, current_data):
+    """Generate SHA-256 hash for tamper-proof log chain."""
+    data_str = f"{prev_hash}{json.dumps(current_data, sort_keys=True)}"
+    return hashlib.sha256(data_str.encode()).hexdigest()
+
+def get_last_log_hash():
+    """Retrieve the hash of the most recent log entry."""
+    conn = _get_conn()
+    row = conn.execute("SELECT log_hash FROM security_events ORDER BY id DESC LIMIT 1").fetchone()
+    return row["log_hash"] if row else "INITIAL_ROOT_HASH"
+
+
 def insert_event(event_type, message, details=None, severity="MEDIUM",
                  mitre_id="", mitre_tactic="", confidence=0.8,
-                 src_ip="", dst_ip=""):
-    """Insert a security event and return its ID."""
+                 src_ip="", dst_ip="", protocol="", port=""):
+    """
+    Unified event insertion with tamper-proof hashing.
+    Replaces both legacy 'events' and structured 'security_logs'.
+    """
     conn = _get_conn()
     now = time.time()
     
-    # 1. Insert into legacy events table for backward compat
+    # Ensure mandatory fields
+    src_ip = src_ip or '0.0.0.0'
+    dst_ip = dst_ip or '0.0.0.0'
+    protocol = protocol or 'UNKNOWN'
+    
+    # Prepare data for hashing
+    payload = {
+        "timestamp": now, "src_ip": src_ip, "dst_ip": dst_ip, 
+        "alert_type": event_type, "severity": severity, "message": message
+    }
+    prev_hash = get_last_log_hash()
+    log_hash = calculate_log_hash(prev_hash, payload)
+
     cur = conn.execute(
-        """INSERT INTO events
-           (timestamp, timestamp_str, event_type, severity, message, details,
-            mitre_id, mitre_tactic, confidence, src_ip, dst_ip)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-        (now, time.strftime("%Y-%m-%d %H:%M:%S"), event_type, severity,
-         message, json.dumps(details or {}), mitre_id, mitre_tactic,
-         confidence, src_ip, dst_ip)
+        """INSERT INTO security_events
+           (timestamp, src_ip, dst_ip, protocol, src_port, dst_port, 
+            alert_type, severity, message, details, mitre_id, mitre_tactic, log_hash)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (now, src_ip, dst_ip, protocol, port, port, 
+         event_type, severity, message, json.dumps(details or {}), 
+         mitre_id, mitre_tactic, log_hash)
     )
-    event_id = cur.lastrowid
+    conn.commit()
 
-    # 2. Insert into new structured security_logs table
+    # -- MongoDB Atlas Integration --
     try:
-        # Extract protocol and port from details if possible
-        protocol = ""
-        port = ""
-        if details:
-            if "protocol" in details:
-                protocol = details["protocol"]
-            if "port" in details:
-                port = str(details["port"])
-            elif "dst_port" in details:
-                port = str(details["dst_port"])
-            elif "target_port" in details:
-                port = str(details["target_port"])
-
-        conn.execute(
-            """INSERT INTO security_logs
-               (timestamp, src_ip, dst_ip, protocol, port, alert_type, severity, description, details)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (now, src_ip, dst_ip, protocol, port, event_type, severity, message, json.dumps(details or {}))
+        # Insert into MongoDB automatically
+        insert_log_to_atlas(
+            event_type=event_type,
+            message=message,
+            details=details,
+            severity=severity,
+            src_ip=src_ip,
+            dst_ip=dst_ip,
+            protocol=protocol,
+            port=port
         )
     except Exception as e:
-        print(f"[DB_ERROR] Failed to insert into security_logs: {e}")
+        # We don't want to crash the whole SIEM if Atlas fails (e.g., internet out)
+        print(f"[MONGODB_ERROR] Automatic Atlas storage failed: {e}")
 
-    conn.commit()
-    return event_id
+    return cur.lastrowid
 
+
+import queue
+
+class PacketBuffer:
+    """Thread-safe buffer for batching packet writes to reduce disk I/O."""
+    def __init__(self, batch_size=100, interval=1.0):
+        self.queue = queue.Queue()
+        self.batch_size = batch_size
+        self.interval = interval
+        self.stop_event = threading.Event()
+        self.worker_thread = threading.Thread(target=self._worker, daemon=True)
+        self.worker_thread.start()
+
+    def add(self, pkt):
+        self.queue.put(pkt)
+
+    def _worker(self):
+        while not self.stop_event.is_set() or not self.queue.empty():
+            batch = []
+            try:
+                # Collect batch
+                while len(batch) < self.batch_size:
+                    batch.append(self.queue.get(timeout=self.interval))
+            except queue.Empty:
+                pass
+
+            if batch:
+                self._flush(batch)
+
+    def _flush(self, batch):
+        conn = _get_conn()
+        try:
+            conn.executemany(
+                """INSERT INTO raw_packets
+                   (timestamp, src_ip, dst_ip, protocol, src_port, dst_port,
+                    length, flags, is_threat, threat_msg, dns_query, http_host, tls_sni)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                [(time.time(), p.get("src_ip", "0.0.0.0"), p.get("dst_ip", "0.0.0.0"),
+                  p.get("protocol", "UNKNOWN"), p.get("src_port", ""),
+                  p.get("dst_port", ""), p.get("length", 0),
+                  p.get("flags", ""), int(p.get("is_threat", False)),
+                  p.get("threat_msg", ""), p.get("dns_query", ""),
+                  p.get("http_host", ""), p.get("tls_sni", "")) for p in batch]
+            )
+            conn.commit()
+        except Exception as e:
+            print(f"[DB_ERROR] Batch flush failed: {e}")
+
+    def stop(self):
+        self.stop_event.set()
+        if self.worker_thread.is_alive():
+            self.worker_thread.join(timeout=2)
+
+# Global buffer instance
+packet_buffer = PacketBuffer()
 
 def search_security_logs(alert_type=None, severity=None, src_ip=None,
                          search=None, limit=100, offset=0):
-    """Structured query for security_logs."""
+    """Refined query for the new security_events table."""
     conn = _get_conn()
-    sql = "SELECT * FROM security_logs WHERE 1=1"
+    sql = "SELECT * FROM security_events WHERE 1=1"
     params = []
     if alert_type:
         sql += " AND alert_type = ?"
@@ -167,7 +236,7 @@ def search_security_logs(alert_type=None, severity=None, src_ip=None,
         sql += " AND src_ip = ?"
         params.append(src_ip)
     if search:
-        sql += " AND (description LIKE ? OR alert_type LIKE ?)"
+        sql += " AND (message LIKE ? OR alert_type LIKE ?)"
         params.append(f"%{search}%")
         params.append(f"%{search}%")
     sql += " ORDER BY timestamp DESC LIMIT ? OFFSET ?"
@@ -177,45 +246,14 @@ def search_security_logs(alert_type=None, severity=None, src_ip=None,
 
 
 def insert_packet(pkt: dict):
-    """Insert a packet record."""
-    conn = _get_conn()
-    conn.execute(
-        """INSERT INTO packets
-           (timestamp, src_ip, dst_ip, protocol, src_port, dst_port,
-            length, flags, is_threat, threat_msg, dns_query, http_host, tls_sni)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-        (time.time(), pkt.get("src_ip", ""), pkt.get("dst_ip", ""),
-         pkt.get("protocol", ""), pkt.get("src_port", ""),
-         pkt.get("dst_port", ""), pkt.get("length", 0),
-         pkt.get("flags", ""), int(pkt.get("is_threat", False)),
-         pkt.get("threat_msg", ""), pkt.get("dns_query", ""),
-         pkt.get("http_host", ""), pkt.get("tls_sni", ""))
-    )
-    conn.commit()
+    """Queue a packet for batch insertion."""
+    packet_buffer.add(pkt)
 
 
 def query_events(event_type=None, severity=None, src_ip=None,
                  search=None, limit=100, offset=0):
-    """Query events with optional filters."""
-    conn = _get_conn()
-    sql = "SELECT * FROM events WHERE 1=1"
-    params = []
-    if event_type:
-        sql += " AND event_type = ?"
-        params.append(event_type)
-    if severity:
-        sql += " AND severity = ?"
-        params.append(severity)
-    if src_ip:
-        sql += " AND src_ip = ?"
-        params.append(src_ip)
-    if search:
-        sql += " AND message LIKE ?"
-        params.append(f"%{search}%")
-    sql += " ORDER BY timestamp DESC LIMIT ? OFFSET ?"
-    params.extend([limit, offset])
-    rows = conn.execute(sql, params).fetchall()
-    return [dict(r) for r in rows]
+    """Shim for backward compatibility, now aliases search_security_logs."""
+    return search_security_logs(event_type, severity, src_ip, search, limit, offset)
 
 
 def get_event_timeline(hours=24, unit="hour"):
@@ -231,7 +269,7 @@ def get_event_timeline(hours=24, unit="hour"):
              CAST((timestamp - ?) / {sec_per_unit} AS INTEGER) AS bucket,
              severity,
              COUNT(*) as cnt
-           FROM events
+           FROM security_events
            WHERE timestamp >= ?
            GROUP BY bucket, severity
            ORDER BY bucket""",
@@ -241,14 +279,14 @@ def get_event_timeline(hours=24, unit="hour"):
 
 
 def get_top_attackers(limit=10):
-    """Return IPs with the most alerts."""
+    """Return IPs with the most alerts from the security_events table."""
     conn = _get_conn()
     rows = conn.execute(
         """SELECT src_ip, COUNT(*) as alert_count,
-                  GROUP_CONCAT(DISTINCT event_type) as attack_types,
+                  GROUP_CONCAT(DISTINCT alert_type) as attack_types,
                   MAX(severity) as max_severity
-           FROM events
-           WHERE src_ip != ''
+           FROM security_events
+           WHERE src_ip != '0.0.0.0'
            GROUP BY src_ip
            ORDER BY alert_count DESC
            LIMIT ?""",
@@ -258,7 +296,7 @@ def get_top_attackers(limit=10):
 
 
 def get_protocol_stats():
-    """Enhanced protocol distribution with complexity metrics."""
+    """Enhanced protocol distribution from raw_packets table."""
     conn = _get_conn()
     cutoff = time.time() - 3600  # last hour
     rows = conn.execute(
@@ -266,8 +304,8 @@ def get_protocol_stats():
                   COUNT(*) as cnt,
                   AVG(length) as avg_len,
                   COUNT(DISTINCT dst_ip) as unique_dsts
-           FROM packets 
-           WHERE timestamp >= ? AND protocol != ''
+           FROM raw_packets 
+           WHERE timestamp >= ? AND protocol != 'UNKNOWN'
            GROUP BY protocol ORDER BY cnt DESC""",
         (cutoff,)
     ).fetchall()
@@ -275,14 +313,14 @@ def get_protocol_stats():
 
 
 def get_network_topology(limit=200):
-    """Unique IP pairs for network graph."""
+    """Unique IP pairs for network graph from raw_packets table."""
     conn = _get_conn()
     cutoff = time.time() - 1800  # last 30 minutes
     rows = conn.execute(
         """SELECT src_ip, dst_ip, protocol, COUNT(*) as weight,
                   SUM(is_threat) as threat_count
-           FROM packets
-           WHERE timestamp >= ? AND src_ip != '' AND dst_ip != ''
+           FROM raw_packets
+           WHERE timestamp >= ? AND src_ip != '0.0.0.0' AND dst_ip != '0.0.0.0'
            GROUP BY src_ip, dst_ip
            ORDER BY weight DESC
            LIMIT ?""",
@@ -383,9 +421,8 @@ def cleanup_old_records():
     """Remove records older than retention period."""
     conn = _get_conn()
     cutoff = time.time() - (LOG_RETENTION_DAYS * 86400)
-    conn.execute("DELETE FROM events WHERE timestamp < ?", (cutoff,))
-    conn.execute("DELETE FROM packets WHERE timestamp < ?", (cutoff,))
-    conn.execute("DELETE FROM security_logs WHERE timestamp < ?", (cutoff,))
+    conn.execute("DELETE FROM security_events WHERE timestamp < ?", (cutoff,))
+    conn.execute("DELETE FROM raw_packets WHERE timestamp < ?", (cutoff,))
     conn.commit()
 
 
@@ -395,7 +432,7 @@ def get_severity_distribution():
     cutoff = time.time() - 86400
     rows = conn.execute(
         """SELECT severity, COUNT(*) as cnt
-           FROM events WHERE timestamp >= ?
+           FROM security_events WHERE timestamp >= ?
            GROUP BY severity""",
         (cutoff,)
     ).fetchall()
@@ -424,8 +461,8 @@ def get_mitre_coverage():
     """MITRE ATT&CK techniques detected."""
     conn = _get_conn()
     rows = conn.execute(
-        """SELECT mitre_id, mitre_tactic, event_type, COUNT(*) as cnt
-           FROM events WHERE mitre_id != ''
+        """SELECT mitre_id, mitre_tactic, alert_type as event_type, COUNT(*) as cnt
+           FROM security_events WHERE mitre_id != ''
            GROUP BY mitre_id"""
     ).fetchall()
     return [dict(r) for r in rows]

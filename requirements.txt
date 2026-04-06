@@ -4,3 +4,4 @@ psutil
 pymongo
 dnspython
 gunicorn
+python-dotenv

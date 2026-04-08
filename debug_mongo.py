@@ -1,7 +1,7 @@
+import os
 import pymongo
 import certifi
-
-uri = "mongodb+srv://Naveen:shreya6@cluster0.ancn7wb.mongodb.net/siemdb?retryWrites=true&w=majority"
+uri = os.getenv("MONGO_URI") or os.getenv("MONGODB_URI", "")
 
 print("Attempting connection to MongoDB Atlas...")
 try:

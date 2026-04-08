@@ -56,9 +56,9 @@ AUTH_PORTS = ["22", "23", "3389", "21", "5900"]  # SSH, Telnet, RDP, FTP, VNC
 # -------------------------
 # Email config
 # -------------------------
-EMAIL_FROM = "naveenkumar062005@gmail.com"
-EMAIL_TO = "naveenkumar062005@gmail.com"
-EMAIL_PASSWORD = "apmkoglpfoeydgle"
+EMAIL_FROM = os.getenv("EMAIL_FROM", "")
+EMAIL_TO = os.getenv("EMAIL_TO", "")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "")
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 465
 EMAIL_RATE_LIMIT = 300   # max 1 email per alert type per 5 minutes
@@ -104,7 +104,7 @@ HTTP_PORT = 80  # Optional: Standard HTTP port for redirection
 # -------------------------
 # MongoDB Atlas
 # -------------------------
-# PLACE YOUR MONGODB ATLAS CONNECTION STRING HERE
-MONGODB_URI = "mongodb+srv://Naveen:shreya6@cluster0.ancn7wb.mongodb.net/siemdb?retryWrites=true&w=majority"
-MONGODB_DB_NAME = "siemdb"
-MONGODB_COLLECTION = "security_logs"
+# Support both names, prefer MONGO_URI
+MONGODB_URI = os.getenv("MONGO_URI") or os.getenv("MONGODB_URI", "")
+MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "siemdb")
+MONGODB_COLLECTION = os.getenv("MONGODB_COLLECTION", "security_logs")

@@ -101,7 +101,8 @@ REDIRECT_HTTP_TO_HTTPS = os.getenv("REDIRECT_HTTP", "False").lower() == "true"
 # -------------------------
 # MongoDB Atlas
 # -------------------------
-MONGODB_URI = os.getenv("MONGODB_URI", "")
+# Support both names, prefer MONGO_URI if both exist
+MONGODB_URI = os.getenv("MONGO_URI") or os.getenv("MONGODB_URI", "")
 MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "siemdb")
 MONGODB_COLLECTION = os.getenv("MONGODB_COLLECTION", "security_logs")
 
